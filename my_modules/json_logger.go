@@ -1,7 +1,6 @@
 package my_modules
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -21,9 +20,13 @@ func LogToJSON(json_obj map[string]interface{}) error {
 
 	var _json_bytes []byte
 	var err error
-	if _json_bytes, err = json.MarshalIndent(json_obj, "", "  "); err != nil {
+	if _json_bytes, err = JSONMarshal(json_obj); err != nil {
 		return err
 	}
+
+	fmt.Println(json_obj)
+	fmt.Println(string(_json_bytes))
+
 	_file, err := os.OpenFile(LogPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -40,7 +43,7 @@ func LogToJSON(json_obj map[string]interface{}) error {
 
 	// if writing file first time
 	if BUFFERSIZE == 0 {
-		if _, err := _file.Write([]byte(fmt.Sprintf("[%s]", string(_json_bytes)))); err != nil {
+		if _, err := _file.Write([]byte(fmt.Sprintf("[%v]", string(_json_bytes)))); err != nil {
 			return err
 		}
 		return nil
@@ -77,7 +80,7 @@ func LogToJSON(json_obj map[string]interface{}) error {
 	}
 
 	// append json entry to json array
-	if _, err := _file.Write([]byte(fmt.Sprintf(",%s]", string(_json_bytes)))); err != nil {
+	if _, err := _file.Write([]byte(fmt.Sprintf(",%v]", string(_json_bytes)))); err != nil {
 		return err
 	}
 

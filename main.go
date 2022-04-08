@@ -3,14 +3,14 @@ package main
 import (
 	"apis_load_test/api_requests"
 	"apis_load_test/my_modules"
-	"fmt"
 )
 
-func main()  {
-	fmt.Println(api_requests.SignUp())
+func main() {
+	my_modules.LogPath = "./log.json"
 
-	my_modules.LogPath="./log.json"
+	// fmt.Printf("%v", api_requests.SignUp())
 
+	my_modules.LogToJSON(api_requests.SignUp())
 
 	// _map:=map[string]interface{}{
 	// 	"fname": "guru",
