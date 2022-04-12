@@ -16,6 +16,9 @@ func SignUp() interface{} {
 	headers := map[string]string{
 		"Content-Type": "application/json",
 	}
-	data := my_modules.BenchmarkAPI(10,2,_url, "post", headers, payload_obj)
-	return data
+	iteration_data,all_data := my_modules.BenchmarkAPI(10,2,_url, "post", headers, payload_obj)
+	return map[string]interface{}{
+		"iteration_data":iteration_data,
+		"all_data":all_data,
+	}
 }

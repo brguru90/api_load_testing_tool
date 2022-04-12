@@ -10,23 +10,24 @@ import (
 // concurrent_request: Number of parallel request per each iteratio
 
 type MessageType struct {
-	Data                 APIData 
+	Data                 APIData
 	Time_to_complete_api int64
 	Res                  *http.Response
 	Err                  error
 }
 
 type BenchmarkData struct {
-	Url                      string
+	Url                       string
 	Status_code_in_percentage map[int]float64
-	Status_codes map[int]int64
+	Status_codes              map[int]int64
 	Concurrent_request        int64
+	Total_number_of_request   int64
 	Avg_time_to_complete_api  int64
 	Min_time_to_complete_api  int64
 	Max_time_to_complete_api  int64
 }
 
-func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url string, method string, headers map[string]string, payload_obj map[string]interface{}) *[]BenchmarkData {
+func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url string, method string, headers map[string]string, payload_obj map[string]interface{}) (*[]BenchmarkData, *BenchmarkData) {
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
@@ -83,7 +84,7 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 		for message := range messages {
 			avg_time_to_complete_api += message.Time_to_complete_api
 			var cur_status_code int = message.Data.context_data.status_code
-			status_codes[cur_status_code]+=1
+			status_codes[cur_status_code] += 1
 
 			if float64(message.Time_to_complete_api) < min_time_to_complete_api {
 				min_time_to_complete_api = float64(message.Time_to_complete_api)
@@ -100,13 +101,13 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 
 		status_code_in_percentage := make(map[int]float64)
 		for status_code, occurrence := range status_codes {
-			status_code_in_percentage[status_code] = (float64(occurrence)/float64(concurrent_request))*100
+			status_code_in_percentage[status_code] = (float64(occurrence) / float64(concurrent_request)) * 100
 		}
 
 		each_iterations_data = append(each_iterations_data, BenchmarkData{
-			Url:                      _url,
+			Url:                       _url,
 			Status_code_in_percentage: status_code_in_percentage,
-			Status_codes:status_codes,
+			Status_codes:              status_codes,
 			Concurrent_request:        concurrent_request,
 			Avg_time_to_complete_api:  avg_time_to_complete_api,
 			Min_time_to_complete_api:  int64(min_time_to_complete_api),
@@ -114,5 +115,31 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 		})
 
 	}
-	return &each_iterations_data
+
+	avg_time_to_complete_api = 0
+	min_time_to_complete_api := math.Inf(1)
+	max_time_to_complete_api := 0.0
+	status_codes := make(map[int]int64)
+	for _, _each_iterations_data := range each_iterations_data {
+		for status_code, occurrence := range _each_iterations_data.Status_codes {
+			status_codes[status_code] += occurrence
+		}
+		if float64(_each_iterations_data.Min_time_to_complete_api) < min_time_to_complete_api {
+			min_time_to_complete_api = float64(_each_iterations_data.Min_time_to_complete_api)
+		}
+
+		if float64(_each_iterations_data.Max_time_to_complete_api) > max_time_to_complete_api {
+			max_time_to_complete_api = float64(_each_iterations_data.Max_time_to_complete_api)
+		}
+		avg_time_to_complete_api += _each_iterations_data.Avg_time_to_complete_api
+	}
+
+	return &each_iterations_data, &BenchmarkData{
+		Url:                      _url,
+		Total_number_of_request:  total_number_of_request,
+		Concurrent_request:        concurrent_request,
+		Min_time_to_complete_api: int64(min_time_to_complete_api),
+		Max_time_to_complete_api: int64(max_time_to_complete_api),
+		Avg_time_to_complete_api: int64(avg_time_to_complete_api / total_number_of_request),
+	}
 }
