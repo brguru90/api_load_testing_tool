@@ -3,6 +3,7 @@ package main
 import (
 	"apis_load_test/api_requests"
 	"apis_load_test/my_modules"
+	// "fmt"
 )
 
 func main() {

@@ -11,6 +11,21 @@ import (
 	"time"
 )
 
+type ContextData struct{
+	status_code int
+	payload map[string]interface{}
+	json_body map[string]interface{}
+	body []byte
+	time int64
+}
+
+type APIData struct{
+	url string 
+	context string
+	context_data ContextData
+}
+
+
 func RandomBytes(size int) (blk []byte, err error) {
 	blk = make([]byte, size)
 	_, err = rand.Read(blk)
@@ -35,17 +50,28 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
 
-func APIReq(_url string, method string, header map[string]string, payload_obj map[string]interface{}) (map[string]interface{}, int64, *http.Response, error) {
+func APIReq(_url string, method string, header map[string]string, payload_obj map[string]interface{}) (APIData, int64, *http.Response, error) {
 
 	method = strings.ToUpper(method)
 
 	payload, err := JSONMarshal(payload_obj)
 	if err != nil {
-		return (map[string]interface{}{
-			"url":          _url,
-			"context":      "json.Marshal",
-			"context_data": map[string]interface{}{},
-		}), 0, nil, err
+		// return (map[string]interface{}{
+		// 	"url":          _url,
+		// 	"context":      "json.Marshal",
+		// 	"context_data": map[string]interface{}{
+		// 		"status_code": -1,
+		// 	},
+		// }), 0, nil, err
+
+		return APIData{
+			url:_url,
+			context:  "json.Marshal",
+			context_data:ContextData{
+				status_code: -1,
+				payload:     payload_obj,
+			},
+		}, 0, nil, err
 	}
 
 	var req *http.Request
@@ -58,15 +84,24 @@ func APIReq(_url string, method string, header map[string]string, payload_obj ma
 		req, err = http.NewRequest(method, _url, nil)
 	}
 	if err != nil {
-		return (map[string]interface{}{
-			"url":     _url,
-			"context": "API request creation",
-			"context_data": map[string]interface{}{
-				"status_code": -1,
-				"payload":     payload,
+		// return (map[string]interface{}{
+		// 	"url":     _url,
+		// 	"context": "API request creation",
+		// 	"context_data": map[string]interface{}{
+		// 		"status_code": -1,
+		// 		"payload":     payload,
+		// 	},
+		// 	"error": err,
+		// }), 0, nil, err
+
+		return APIData{
+			url:_url,
+			context:  "API request creation",
+			context_data:ContextData{
+				status_code: -1,
+				payload:     payload_obj,
 			},
-			"error": err,
-		}), 0, nil, err
+		}, 0, nil, err
 	}
 
 	// req.Header.Add("Content-Type", "application/json")
@@ -81,15 +116,24 @@ func APIReq(_url string, method string, header map[string]string, payload_obj ma
 	end_time := time.Now()
 
 	if err != nil {
-		return (map[string]interface{}{
-			"url":     _url,
-			"context": "API request send",
-			"context_data": map[string]interface{}{
-				"status_code": -1,
-				"payload":     payload,
+		// return (map[string]interface{}{
+		// 	"url":     _url,
+		// 	"context": "API request send",
+		// 	"context_data": map[string]interface{}{
+		// 		"status_code": -1,
+		// 		"payload":     payload,
+		// 	},
+		// 	"error": err,
+		// }), end_time.Sub(start_time).Milliseconds(), nil, err
+
+		return APIData{
+			url:_url,
+			context:  "API request send",
+			context_data:ContextData{
+				status_code: -1,
+				payload:     payload_obj,
 			},
-			"error": err,
-		}), end_time.Sub(start_time).Milliseconds(), nil, err
+		},end_time.Sub(start_time).Milliseconds(), nil, err
 	}
 
 	defer resp.Body.Close()
@@ -102,16 +146,28 @@ func APIReq(_url string, method string, header map[string]string, payload_obj ma
 		body, _ = ioutil.ReadAll(resp.Body)
 		json_body = nil
 	}
-	return (map[string]interface{}{
-		"url":     _url,
-		"context": "API request",
-		"context_data": map[string]interface{}{
-			"status_code": resp.StatusCode,
-			"payload":     payload_obj,
-			"json_body":   json_body,
-			"body":        body,
-			"time":        end_time.Sub(start_time).Milliseconds(),
+	// return (map[string]interface{}{
+	// 	"url":     _url,
+	// 	"context": "API request",
+	// 	"context_data": map[string]interface{}{
+	// 		"status_code": resp.StatusCode,
+	// 		"payload":     payload_obj,
+	// 		"json_body":   json_body,
+	// 		"body":        body,
+	// 		"time":        end_time.Sub(start_time).Milliseconds(),
+	// 	},
+	// }), end_time.Sub(start_time).Milliseconds(), resp, nil
+
+	return APIData{
+		url:_url,
+		context:  "API response",
+		context_data:ContextData{
+			status_code: resp.StatusCode,
+			payload:     payload_obj,
+			json_body: json_body,
+			body: body,
+			time:        end_time.Sub(start_time).Milliseconds(),
 		},
-	}), end_time.Sub(start_time).Milliseconds(), resp, nil
+	},end_time.Sub(start_time).Milliseconds(), resp, nil
 
 }

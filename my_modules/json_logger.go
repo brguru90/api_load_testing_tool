@@ -13,7 +13,7 @@ func (m *MyError) Error() string {
 	return "Invalid file path"
 }
 
-func LogToJSON(json_obj map[string]interface{}) error {
+func LogToJSON(json_obj interface{}) error {
 	if LogPath == "" {
 		return &MyError{}
 	}

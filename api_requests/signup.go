@@ -2,10 +2,10 @@ package api_requests
 
 import (
 	"apis_load_test/my_modules"
-	"fmt"
+	// "encoding/json"
 )
 
-func SignUp() map[string]interface{} {
+func SignUp() interface{} {
 	_url := "http://localhost:8000/api/sign_up/"
 
 	payload_obj := map[string]interface{}{
@@ -16,10 +16,6 @@ func SignUp() map[string]interface{} {
 	headers := map[string]string{
 		"Content-Type": "application/json",
 	}
-	data, _, _, err := my_modules.APIReq(_url, "post", headers, payload_obj)
-	if err == nil {
-		fmt.Println(data)
-		return data
-	}
-	panic(err)
+	data := my_modules.BenchmarkAPI(10,2,_url, "post", headers, payload_obj)
+	return data
 }
