@@ -4,6 +4,7 @@ import (
 	"math"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // total_number_of_request: Total number of request
@@ -25,11 +26,13 @@ type BenchmarkData struct {
 	Avg_time_to_complete_api  int64 `json:"Avg_time_to_complete_api_in_millesec,omitempty"`
 	Min_time_to_complete_api  int64 `json:"Min_time_to_complete_api_in_millesec,omitempty"`
 	Max_time_to_complete_api  int64 `json:"Max_time_to_complete_api_in_millesec,omitempty"`
+	Total_time_to_complete_all_apis int64 `json:"Total_time_to_complete_all_apis_in_millesec,omitempty"`
 
 
-	Avg_time_to_complete_api_in_sec  float64 `json:"Avg_time_to_complete_api_in_sec"`
+	Avg_time_to_complete_api_in_sec  float64 `json:"Avg_time_to_complete_api_in_sec,omitempty"`
 	Min_time_to_complete_api_in_sec  float64 `json:"Min_time_to_complete_api_in_sec,omitempty"`
 	Max_time_to_complete_api_in_sec  float64 `json:"Max_time_to_complete_api_in_sec,omitempty"`
+	Total_time_to_complete_all_apis_iteration_in_sec float64 `json:"Total_time_to_complete_all_apis_iteration_in_sec,omitempty"`
 }
 
 func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url string, method string, headers map[string]string, payload_obj map[string]interface{},payload_generator_callback  func() map[string]interface{}) (*[]BenchmarkData, *BenchmarkData) {
@@ -49,10 +52,15 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 	var iteration_wg sync.WaitGroup
 
 	var i, j, avg_time_to_complete_api int64
+
+
+	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
 		messages := make(chan MessageType)
 		// fmt.Printf("i=%v\n", i)
 
+
+		concurrent_req_start_time := time.Now()
 		// run whole parallel request routine in background
 		// so that i can loop through channel data later
 		iteration_wg.Add(1)
@@ -108,6 +116,8 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 		// fmt.Println("finish loop through msgs")
 		iteration_wg.Wait() // just wait here before doing next iteration
 		// fmt.Println("finish wait")
+		concurrent_req_end_time := time.Now()
+
 		avg_time_to_complete_api = avg_time_to_complete_api / concurrent_request
 
 		status_code_in_percentage := make(map[int]float64)
@@ -123,9 +133,11 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 			Avg_time_to_complete_api:  avg_time_to_complete_api,
 			Min_time_to_complete_api:  int64(min_time_to_complete_api),
 			Max_time_to_complete_api:  int64(max_time_to_complete_api),
+			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
 		})
 
 	}
+	iterations_end_time := time.Now()
 
 	avg_time_to_complete_api = 0
 	min_time_to_complete_api := math.Inf(1)
@@ -153,5 +165,6 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 		Min_time_to_complete_api_in_sec: min_time_to_complete_api/1000.0,
 		Max_time_to_complete_api_in_sec: max_time_to_complete_api/1000.0,
 		Avg_time_to_complete_api_in_sec: (float64(avg_time_to_complete_api) / float64(total_number_of_request))/1000,
+		Total_time_to_complete_all_apis_iteration_in_sec: float64(iterations_end_time.Sub(iterations_start_time).Milliseconds())/1000.0,
 	}
 }
