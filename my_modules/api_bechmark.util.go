@@ -22,12 +22,17 @@ type BenchmarkData struct {
 	Status_codes              map[int]int64
 	Concurrent_request        int64
 	Total_number_of_request   int64
-	Avg_time_to_complete_api  int64
-	Min_time_to_complete_api  int64
-	Max_time_to_complete_api  int64
+	Avg_time_to_complete_api  int64 `json:"Avg_time_to_complete_api_in_millesec,omitempty"`
+	Min_time_to_complete_api  int64 `json:"Min_time_to_complete_api_in_millesec,omitempty"`
+	Max_time_to_complete_api  int64 `json:"Max_time_to_complete_api_in_millesec,omitempty"`
+
+
+	Avg_time_to_complete_api_in_sec  float64 `json:"Avg_time_to_complete_api_in_sec"`
+	Min_time_to_complete_api_in_sec  float64 `json:"Min_time_to_complete_api_in_sec,omitempty"`
+	Max_time_to_complete_api_in_sec  float64 `json:"Max_time_to_complete_api_in_sec,omitempty"`
 }
 
-func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url string, method string, headers map[string]string, payload_obj map[string]interface{}) (*[]BenchmarkData, *BenchmarkData) {
+func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url string, method string, headers map[string]string, payload_obj map[string]interface{},payload_generator_callback  func() map[string]interface{}) (*[]BenchmarkData, *BenchmarkData) {
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
@@ -59,7 +64,13 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 				// fmt.Printf("%v-%v\n", i, j)
 				go func() {
 					defer concurrent_req_wg.Done()
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, payload_obj)
+					var api_payload map[string]interface{}
+					if payload_obj==nil{
+						api_payload=payload_generator_callback()
+					} else {
+						api_payload=payload_obj
+					}
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
@@ -139,8 +150,8 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 		Status_codes:             status_codes,
 		Total_number_of_request:  total_number_of_request,
 		Concurrent_request:       concurrent_request,
-		Min_time_to_complete_api: int64(min_time_to_complete_api),
-		Max_time_to_complete_api: int64(max_time_to_complete_api),
-		Avg_time_to_complete_api: int64(avg_time_to_complete_api / total_number_of_request),
+		Min_time_to_complete_api_in_sec: min_time_to_complete_api/1000.0,
+		Max_time_to_complete_api_in_sec: max_time_to_complete_api/1000.0,
+		Avg_time_to_complete_api_in_sec: (float64(avg_time_to_complete_api) / float64(total_number_of_request))/1000,
 	}
 }
