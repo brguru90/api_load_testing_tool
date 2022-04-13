@@ -136,8 +136,9 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 
 	return &each_iterations_data, &BenchmarkData{
 		Url:                      _url,
+		Status_codes:             status_codes,
 		Total_number_of_request:  total_number_of_request,
-		Concurrent_request:        concurrent_request,
+		Concurrent_request:       concurrent_request,
 		Min_time_to_complete_api: int64(min_time_to_complete_api),
 		Max_time_to_complete_api: int64(max_time_to_complete_api),
 		Avg_time_to_complete_api: int64(avg_time_to_complete_api / total_number_of_request),
