@@ -79,7 +79,7 @@ func BenchmarkAPI(total_number_of_request int64, concurrent_request int64, _url 
 					} else {
 						api_payload=payload_obj
 					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,nil,nil)
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,-1,nil,nil)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,

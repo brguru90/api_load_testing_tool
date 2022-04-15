@@ -54,8 +54,9 @@ func APIReq(
 	method string,
 	header map[string]string,
 	payload_obj map[string]interface{},
-	request_interceptor func(req *http.Request),
-	response_interceptor func(resp *http.Response),
+	uid int64,
+	request_interceptor func(req *http.Request,uid int64),
+	response_interceptor func(resp *http.Response,uid int64),
 ) (APIData, int64, *http.Response, error) {
 
 	method = strings.ToUpper(method)
@@ -99,7 +100,7 @@ func APIReq(
 	}
 
 	if request_interceptor!=nil{
-		request_interceptor(req)
+		request_interceptor(req,uid)
 	}
 
 	client := &http.Client{}
@@ -122,7 +123,7 @@ func APIReq(
 
 
 	if response_interceptor!=nil{
-		response_interceptor(resp)
+		response_interceptor(resp,uid)
 	}
 
 	defer resp.Body.Close()

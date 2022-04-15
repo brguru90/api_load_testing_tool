@@ -15,8 +15,8 @@ func BenchmarkAPIAsMultiUser(
 	headers map[string]string,
 	payload_obj map[string]interface{},
 	payload_generator_callback func() map[string]interface{},
-	request_interceptor func(req *http.Request),
-	response_interceptor func(resp *http.Response),
+	request_interceptor func(req *http.Request,uid int64),
+	response_interceptor func(resp *http.Response,uid int64),
 ) (*[]BenchmarkData, *BenchmarkData) {
 
 	var each_iterations_data []BenchmarkData
@@ -44,13 +44,13 @@ func BenchmarkAPIAsMultiUser(
 		// run whole parallel request routine in background
 		// so that i can loop through channel data later
 		iteration_wg.Add(1)
-		go func() {
+		go func(iteration int64) {
 			defer iteration_wg.Done()
 			// spin up all request parallally & wait for all those to finish
 			concurrent_req_wg.Add(int(concurrent_request))
 			for j = 0; j < concurrent_request; j++ {
 				// fmt.Printf("%v-%v\n", i, j)
-				go func() {
+				go func(main_iteration int64,sub_iteration int64) {
 					defer concurrent_req_wg.Done()
 					var api_payload map[string]interface{}
 					if payload_obj == nil {
@@ -58,7 +58,7 @@ func BenchmarkAPIAsMultiUser(
 					} else {
 						api_payload = payload_obj
 					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,request_interceptor,response_interceptor)
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,main_iteration+sub_iteration,request_interceptor,response_interceptor)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
@@ -67,12 +67,12 @@ func BenchmarkAPIAsMultiUser(
 						Err:                  err,
 					}
 					// fmt.Printf("finish channel\n")
-				}()
+				}(iteration,j)
 			}
 			concurrent_req_wg.Wait()
 			// fmt.Println("all the parallel request finished")
 			close(messages)
-		}()
+		}(i)
 
 		avg_time_to_complete_api = 0
 		min_time_to_complete_api := math.Inf(1)
