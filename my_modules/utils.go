@@ -127,7 +127,9 @@ func APIReq(
 	}
 
 	defer resp.Body.Close()
-	defer req.Body.Close()
+	if payload_obj!=nil{
+		defer req.Body.Close()
+	}
 	json_body := make(map[string]interface{})
 	var body []byte = nil
 	if strings.Contains(resp.Header.Get("Content-Type"), "json") {

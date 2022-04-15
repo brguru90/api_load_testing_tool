@@ -53,7 +53,7 @@ func BenchmarkAPIAsMultiUser(
 				go func(sub_iteration int64) {
 					defer concurrent_req_wg.Done()
 					var api_payload map[string]interface{}
-					if payload_obj == nil {
+					if payload_obj == nil && payload_generator_callback!=nil{
 						api_payload = payload_generator_callback(sub_iteration)
 					} else {
 						api_payload = payload_obj

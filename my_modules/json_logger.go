@@ -24,8 +24,8 @@ func LogToJSON(json_obj interface{}) error {
 		return err
 	}
 
-	fmt.Println(json_obj)
-	fmt.Println(string(_json_bytes))
+	// fmt.Println(json_obj)
+	// fmt.Println(string(_json_bytes))
 
 	_file, err := os.OpenFile(LogPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {

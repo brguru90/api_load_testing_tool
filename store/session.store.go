@@ -2,29 +2,32 @@ package store
 
 import "net/http"
 
-type ListOfCookies []*http.Cookie
-
-var cookies []ListOfCookies=[]ListOfCookies{}
-
-
-func GetAllCookies() []ListOfCookies {
-	return cookies
+type RequestSideSession struct{
+	Cookies []*http.Cookie
+	CSRF_token string
 }
 
-func GetCookiesRefs() *[]ListOfCookies{
-	return &cookies
+var req_sessions []RequestSideSession=[]RequestSideSession{}
+
+
+func GetAllSessions() []RequestSideSession {
+	return req_sessions
 }
 
-func ResetCookies(){
-	cookies=[]ListOfCookies{}
+func GetSessionsRefs() *[]RequestSideSession{
+	return &req_sessions
 }
 
-func AppendCookie(cookie []*http.Cookie)  {
-	cookies = append(cookies, cookie)
+func ResetSessions(){
+	req_sessions=[]RequestSideSession{}
 }
 
-func PopCookie() ListOfCookies {
-	cookies=cookies[:len(cookies)-1]
-	return cookies[len(cookies)-1]
+func AppendCSession(req_session RequestSideSession)  {
+	req_sessions = append(req_sessions, req_session)
+}
+
+func PopSession() RequestSideSession {
+	req_sessions=req_sessions[:len(req_sessions)-1]
+	return req_sessions[len(req_sessions)-1]
 }
 

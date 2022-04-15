@@ -49,8 +49,8 @@ func getUserCredentialFromDB(_limit int64) []string {
 }
 
 func LoginAsMultiUser() interface{} {
-	var total_req int64 = 100
-	var concurrent_req int64 = 10
+	var total_req int64 = 10
+	var concurrent_req int64 = 2
 
 	_url := "http://localhost:8000/api/login/"
 	headers := map[string]string{
@@ -76,10 +76,15 @@ func LoginAsMultiUser() interface{} {
 	response_interceptor := func(resp *http.Response, uid int64) {
 		fmt.Printf("response interceptor uid--> %v\n", uid)
 
+		user_data:=store.RequestSideSession{			
+			CSRF_token: resp.Header.Get("csrf_token"),
+		}
+
 		if len(resp.Cookies()) > 0 {
 			m.Lock()
-			if int64(len(*store.GetCookiesRefs())) < concurrent_req {
-				store.AppendCookie(resp.Cookies())
+			if int64(len(*store.GetSessionsRefs())) < concurrent_req {
+				user_data.Cookies=resp.Cookies()
+				store.AppendCSession(user_data)
 			}
 			m.Unlock()
 		}
@@ -87,8 +92,9 @@ func LoginAsMultiUser() interface{} {
 
 	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "post", headers, nil, payload_generator_callback, request_interceptor, response_interceptor)
 
-	fmt.Printf("total collected cookies %d\n", len(store.GetAllCookies()))
-	fmt.Printf("total collected cookies %d\n", len(*store.GetCookiesRefs()))
+	fmt.Printf("total collected cookies %d\n", len(store.GetAllSessions()))
+	fmt.Printf("total collected cookies %d\n", len(*store.GetSessionsRefs()))
+	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
 	fmt.Println("bench mark on api finished")
 

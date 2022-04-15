@@ -2,6 +2,7 @@ package tests
 
 import (
 	"apis_load_test/api_requests"
+	"apis_load_test/api_requests/user"
 	"apis_load_test/my_modules"
 	"apis_load_test/store"
 	"fmt"
@@ -11,7 +12,9 @@ import (
 func TestAsMultiUser() {
 	my_modules.LogPath = "./log.json"
 	// signUpAPI()
-	api_requests.LoginAsMultiUser()
+	my_modules.LogToJSON(api_requests.LoginAsMultiUser())
+	fmt.Println("--> LoginAsMultiUser finished")
+	my_modules.LogToJSON(user.GetUserDetailAsMultiUser())
 
 }
 
@@ -36,12 +39,14 @@ func signUpAPI() {
 		fmt.Printf("Got cookie --> %v\n\n", len(resp.Cookies()))
 
 		if len(resp.Cookies()) > 0 {
-			store.AppendCookie(resp.Cookies())
+			store.AppendCSession(store.RequestSideSession{			
+				Cookies: resp.Cookies(),
+			})
 		}
 	}
 
 	fmt.Println(my_modules.APIReq(_url, "post", headers, api_payload, -1, request_interceptor, response_interceptor))
 
-	fmt.Println(store.GetAllCookies())
+	fmt.Println(store.GetAllSessions())
 
 }
