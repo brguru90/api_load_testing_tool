@@ -9,18 +9,19 @@ import (
 
 
 
-func GetUserDetailAsMultiUser() interface{} {
-	var total_req int64 = 10
-	var concurrent_req int64 = 2
+func GetUserDetailAsMultiUser(_url string) interface{} {
+	var total_req int64 = 100000
+	var concurrent_req int64 = 10000
 
-	_url := "http://localhost:8000/api/user/"
+	// _url := "http://localhost:8000/api/user/"
+	// _url :="http://localhost:8000/api/user/?page=1000&limit=20"
 	headers := map[string]string{
 		"Content-Type": "application/json",
 	}
 
 
 	request_interceptor := func(req *http.Request, uid int64) {
-		fmt.Printf("request interceptor uid--> %v\n", uid)
+		// fmt.Printf("request interceptor uid--> %v\n", uid)
 
 		req.Header.Add("csrf_token",(*store.GetSessionsRefs())[uid].CSRF_token)
 		
@@ -29,11 +30,8 @@ func GetUserDetailAsMultiUser() interface{} {
 		}
 	}
 
-	response_interceptor := func(resp *http.Response, uid int64) {
-		fmt.Printf("response interceptor uid--> %v\n", uid)
-	}
-
-	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "get", headers, nil, nil, request_interceptor, response_interceptor)
+	
+	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "get", headers, nil, nil, request_interceptor, nil)
 
 	fmt.Println("bench mark on api finished")
 

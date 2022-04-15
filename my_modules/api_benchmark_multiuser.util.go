@@ -59,7 +59,7 @@ func BenchmarkAPIAsMultiUser(
 						api_payload = payload_obj
 					}
 					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,sub_iteration,request_interceptor,response_interceptor)
-					fmt.Printf("finish APIReq\n")
+					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
 						Time_to_complete_api: time_to_complete_api,

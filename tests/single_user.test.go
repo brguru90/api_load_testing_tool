@@ -6,19 +6,7 @@ import (
 )
 
 func TestAsSingleUser()  {
-	// fmt.Printf("%v", api_requests.SignUp())
-
 	my_modules.LogToJSON(api_requests.SignUp())
-
-	// _map:=map[string]interface{}{
-	// 	"fname": "guru",
-	// 	"lname": "prasad",
-	// }
-
-	// fmt.Println(my_modules.LogToJSON(_map))
-	// fmt.Println(my_modules.LogToJSON(_map))
-	// my_modules.LogToJSON(_map)
-	// my_modules.LogToJSON(_map)
 }
 
 
