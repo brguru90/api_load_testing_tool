@@ -8,6 +8,6 @@ import (
 func main() {
 	my_modules.LogPath = "./log.json"
 
-	// tests.TestAsSingleUser()
-	tests.TestAsMultiUser()
+	tests.TestAsSingleUser()
+	// tests.TestAsMultiUser()
 }
