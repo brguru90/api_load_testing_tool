@@ -8,3 +8,10 @@
 * need to add millisecond representaion of delay along with seconds in "all_data"
 * need to add status code in perecentage along with actual count in "all_data"
 * change "all_data" key to "overall metric"
+*  Bandwidth (kilo bytes in/out per second)
+   1. total request payload sent in size
+   2. total response payload recived in size
+*  prepare payload ahead of time [ optional / but important ] 
+   the "payload_generator_callback" generator should be called & store the payloads before start sending request
+   so any computational intensive task will not effect bench mark metrics
+   & measuring Bandwidth will also cause less effect/error on metrics
