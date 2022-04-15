@@ -150,3 +150,10 @@ func APIReq(
 	}, end_time.Sub(start_time).Milliseconds(), resp, nil
 
 }
+
+
+func CheckError(err error) {
+    if err != nil {
+        panic(err)
+    }
+}
