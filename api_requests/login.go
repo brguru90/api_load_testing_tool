@@ -4,6 +4,7 @@ import (
 	"apis_load_test/my_modules"
 	"apis_load_test/store"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -48,6 +49,31 @@ func getUserCredentialFromDB(_limit int64) []string {
 	return all_users_email
 }
 
+type Users struct{
+	Users []map[string]interface{} `json:"users"`
+}
+type ResponseType struct{
+	Status string  `json:"status"`
+	Msg string `json:"msg"`
+	Data Users `json:"data"`
+}
+
+func getUserCredentialFromAPI(_limit int64) []string {
+
+	all_users_email := []string{}
+	resp, err := http.Get("http://localhost:8000/api/all_users/")
+	my_modules.CheckError(err)
+	var json_body ResponseType
+	// json_body := make(map[string]interface{})
+	json.NewDecoder(resp.Body).Decode(&json_body)
+	
+	for _,user := range json_body.Data.Users{
+		all_users_email=append(all_users_email,user["email"].(string))
+	}
+
+	return all_users_email
+}
+
 func LoginAsMultiUser() interface{} {
 	var total_req int64 = 100000
 	var concurrent_req int64 = 10000
@@ -57,7 +83,7 @@ func LoginAsMultiUser() interface{} {
 		"Content-Type": "application/json",
 	}
 
-	all_users_email := getUserCredentialFromDB(concurrent_req)
+	all_users_email := getUserCredentialFromAPI(concurrent_req)
 	if len(all_users_email) == 0 {
 		panic("user emails are empty")
 	}
