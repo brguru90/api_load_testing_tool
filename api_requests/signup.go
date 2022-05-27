@@ -2,13 +2,14 @@ package api_requests
 
 import (
 	"apis_load_test/my_modules"
+	"apis_load_test/store"
 	"fmt"
 	// "encoding/json"
 )
 
 func SignUp() interface{} {
-	var total_req int64=10000
-	var concurrent_req int64=1000
+	var total_req int64 = 10000
+	var concurrent_req int64 = 1000
 
 	_url := "http://localhost:8000/api/sign_up/"
 
@@ -21,13 +22,19 @@ func SignUp() interface{} {
 		"Content-Type": "application/json",
 	}
 	// iteration_data,all_data := my_modules.BenchmarkAPI(10,2,_url, "post", headers, payload_obj,nil)
-	iteration_data,all_data := my_modules.BenchmarkAPIAsMultiUser(total_req,concurrent_req,_url, "post", headers, nil,func(uid int64) map[string]interface{} {
-		return map[string]interface{}{
+
+	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "post", headers, nil, func(uid int64) map[string]interface{} {
+		signup_payload := map[string]interface{}{
 			"email":       my_modules.RandomString(100) + "@gmail.com",
 			"name":        my_modules.RandomString(20),
 			"description": my_modules.RandomString(100),
 		}
-	},nil,nil)
+		store.LoginCredential_Append(store.LoginCredential{
+			Name:  signup_payload["name"].(string),
+			Email: signup_payload["email"].(string),
+		})
+		return signup_payload
+	}, nil, nil)
 
 	// iteration_data,all_data := my_modules.BenchmarkAPI(total_req,concurrent_req,_url, "post", headers, nil,func() map[string]interface{} {
 	// 	return map[string]interface{}{
@@ -39,8 +46,10 @@ func SignUp() interface{} {
 
 	fmt.Println("bench mark on api finished")
 
+	store.LoginCredential_WaitForAppend()
+
 	return map[string]interface{}{
-		"iteration_data":iteration_data,
-		"all_data":all_data,
+		"iteration_data": iteration_data,
+		"all_data":       all_data,
 	}
 }
