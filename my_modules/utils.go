@@ -7,16 +7,20 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptrace"
 	"strings"
 	"time"
 )
 
+var HTTPTimeout = time.Minute * 5
+
 type ContextData struct {
-	status_code int
-	payload     map[string]interface{}
-	json_body   map[string]interface{}
-	body        []byte
-	time        int64
+	status_code     int
+	payload         map[string]interface{}
+	json_body       map[string]interface{}
+	body            []byte
+	time            int64
+	time_to_connect int64
 }
 
 type APIData struct {
@@ -55,8 +59,8 @@ func APIReq(
 	header map[string]string,
 	payload_obj map[string]interface{},
 	uid int64,
-	request_interceptor func(req *http.Request,uid int64),
-	response_interceptor func(resp *http.Response,uid int64),
+	request_interceptor func(req *http.Request, uid int64),
+	response_interceptor func(resp *http.Response, uid int64),
 ) (APIData, int64, *http.Response, error) {
 
 	method = strings.ToUpper(method)
@@ -99,13 +103,30 @@ func APIReq(
 		req.Header.Add(key, value)
 	}
 
-	if request_interceptor!=nil{
-		request_interceptor(req,uid)
+	if request_interceptor != nil {
+		request_interceptor(req, uid)
 	}
 
-	client := &http.Client{}
-
 	start_time := time.Now()
+	var connected_time time.Time = start_time
+
+	// https://pkg.go.dev/net/http/httptrace@go1.18.2
+	trace := &httptrace.ClientTrace{
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			connected_time = time.Now()
+			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
+		},
+		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
+		// },
+	}
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+
+
+	client := &http.Client{
+		Timeout: HTTPTimeout,
+	}
+
 	resp, err := client.Do(req)
 	end_time := time.Now()
 
@@ -121,13 +142,12 @@ func APIReq(
 		}, end_time.Sub(start_time).Milliseconds(), nil, err
 	}
 
-
-	if response_interceptor!=nil{
-		response_interceptor(resp,uid)
+	if response_interceptor != nil {
+		response_interceptor(resp, uid)
 	}
 
 	defer resp.Body.Close()
-	if payload_obj!=nil{
+	if payload_obj != nil {
 		defer req.Body.Close()
 	}
 	json_body := make(map[string]interface{})
@@ -143,19 +163,19 @@ func APIReq(
 		url:     _url,
 		context: "API response",
 		context_data: ContextData{
-			status_code: resp.StatusCode,
-			payload:     payload_obj,
-			json_body:   json_body,
-			body:        body,
-			time:        end_time.Sub(start_time).Milliseconds(),
+			status_code:     resp.StatusCode,
+			payload:         payload_obj,
+			json_body:       json_body,
+			body:            body,
+			time:            end_time.Sub(start_time).Milliseconds(),
+			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
 		},
 	}, end_time.Sub(start_time).Milliseconds(), resp, nil
 
 }
 
-
 func CheckError(err error) {
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 }

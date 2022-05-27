@@ -15,8 +15,8 @@ func BenchmarkAPIAsMultiUser(
 	headers map[string]string,
 	payload_obj map[string]interface{},
 	payload_generator_callback func(current_iteration int64) map[string]interface{},
-	request_interceptor func(req *http.Request,uid int64),
-	response_interceptor func(resp *http.Response,uid int64),
+	request_interceptor func(req *http.Request, uid int64),
+	response_interceptor func(resp *http.Response, uid int64),
 ) (*[]BenchmarkData, *BenchmarkData) {
 
 	var each_iterations_data []BenchmarkData
@@ -33,7 +33,7 @@ func BenchmarkAPIAsMultiUser(
 	var concurrent_req_wg sync.WaitGroup
 	var iteration_wg sync.WaitGroup
 
-	var i, j, avg_time_to_complete_api int64
+	var i, j, avg_time_to_complete_api, avg_time_to_connect_api int64
 
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
@@ -53,12 +53,12 @@ func BenchmarkAPIAsMultiUser(
 				go func(sub_iteration int64) {
 					defer concurrent_req_wg.Done()
 					var api_payload map[string]interface{}
-					if payload_obj == nil && payload_generator_callback!=nil{
+					if payload_obj == nil && payload_generator_callback != nil {
 						api_payload = payload_generator_callback(sub_iteration)
 					} else {
 						api_payload = payload_obj
 					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload,sub_iteration,request_interceptor,response_interceptor)
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
@@ -75,6 +75,7 @@ func BenchmarkAPIAsMultiUser(
 		}()
 
 		avg_time_to_complete_api = 0
+		avg_time_to_connect_api = 0
 		min_time_to_complete_api := math.Inf(1)
 		max_time_to_complete_api := 0.0
 		status_codes := make(map[int]int64)
@@ -82,6 +83,7 @@ func BenchmarkAPIAsMultiUser(
 		// fmt.Println("loop through msgs")
 		for message := range messages {
 			avg_time_to_complete_api += message.Time_to_complete_api
+			avg_time_to_connect_api += message.Data.context_data.time_to_connect
 			var cur_status_code int = message.Data.context_data.status_code
 			status_codes[cur_status_code] += 1
 
@@ -99,6 +101,7 @@ func BenchmarkAPIAsMultiUser(
 		concurrent_req_end_time := time.Now()
 
 		avg_time_to_complete_api = avg_time_to_complete_api / concurrent_request
+		avg_time_to_connect_api = avg_time_to_connect_api / concurrent_request
 
 		status_code_in_percentage := make(map[int]float64)
 		for status_code, occurrence := range status_codes {
@@ -111,6 +114,7 @@ func BenchmarkAPIAsMultiUser(
 			Status_codes:                    status_codes,
 			Concurrent_request:              concurrent_request,
 			Avg_time_to_complete_api:        avg_time_to_complete_api,
+			Avg_time_to_connect_api:         avg_time_to_connect_api,
 			Min_time_to_complete_api:        int64(min_time_to_complete_api),
 			Max_time_to_complete_api:        int64(max_time_to_complete_api),
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
@@ -120,6 +124,7 @@ func BenchmarkAPIAsMultiUser(
 	iterations_end_time := time.Now()
 
 	avg_time_to_complete_api = 0
+	avg_time_to_connect_api =0
 	min_time_to_complete_api := math.Inf(1)
 	max_time_to_complete_api := 0.0
 	status_codes := make(map[int]int64)
@@ -135,6 +140,7 @@ func BenchmarkAPIAsMultiUser(
 			max_time_to_complete_api = float64(_each_iterations_data.Max_time_to_complete_api)
 		}
 		avg_time_to_complete_api += _each_iterations_data.Avg_time_to_complete_api
+		avg_time_to_connect_api += _each_iterations_data.Avg_time_to_connect_api
 	}
 
 	return &each_iterations_data, &BenchmarkData{
@@ -145,6 +151,7 @@ func BenchmarkAPIAsMultiUser(
 		Min_time_to_complete_api_in_sec: min_time_to_complete_api / 1000.0,
 		Max_time_to_complete_api_in_sec: max_time_to_complete_api / 1000.0,
 		Avg_time_to_complete_api_in_sec: (float64(avg_time_to_complete_api) / float64(total_number_of_request)) / 1000,
+		Avg_time_to_connect_api_in_sec:  (float64(avg_time_to_connect_api) / float64(total_number_of_request)) / 1000,
 		Total_time_to_complete_all_apis_iteration_in_sec: float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
 	}
 }
