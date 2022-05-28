@@ -73,9 +73,7 @@ func getUserCredentialFromAPI(_limit int64) []string {
 	return all_users_email
 }
 
-func LoginAsMultiUser() interface{} {
-	var total_req int64 = 100000
-	var concurrent_req int64 = 10000
+func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 
 	_url := "http://localhost:8000/api/login/"
 	headers := map[string]string{
