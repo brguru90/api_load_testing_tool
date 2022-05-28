@@ -3,6 +3,7 @@ package api_requests
 import (
 	"apis_load_test/my_modules"
 	"apis_load_test/store"
+	"fmt"
 	// "encoding/json"
 )
 
@@ -40,6 +41,8 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 	// 		"description": my_modules.RandomString(100),
 	// 	}
 	// })
+
+	fmt.Println("bench mark on api finished")
 	store.LoginCredential_WaitForAppend()
 
 	return map[string]interface{}{

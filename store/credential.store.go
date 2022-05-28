@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -10,12 +9,12 @@ type LoginCredential struct {
 	Email string
 }
 
+var login_credential []LoginCredential = []LoginCredential{}
 var login_credential_q = make(chan LoginCredential)
-var watching_q = false
+var watching_login_credential_q = false
 
-func AppendFromQ() {
-	watching_q = true
-	fmt.Println("LoginCredential: watching_q")
+func LoginCredential_AppendFromQ() {
+	watching_login_credential_q = true
 	go func() {
 		for lc := range login_credential_q {
 			login_credential = append(login_credential, lc)
@@ -23,11 +22,9 @@ func AppendFromQ() {
 	}()
 }
 
-var login_credential []LoginCredential = []LoginCredential{}
-
 func LoginCredential_Append(lc LoginCredential) {
-	if !watching_q {
-		AppendFromQ()
+	if !watching_login_credential_q {
+		LoginCredential_AppendFromQ()
 	}
 	login_credential_q <- lc
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	my_modules.HTTPTimeout = time.Minute * 10
+	my_modules.HTTPTimeout = time.Minute * 1
 	my_modules.LogPath = "./log.json"
 	tests.TestAsSingleUser()
 	tests.TestAsMultiUser()

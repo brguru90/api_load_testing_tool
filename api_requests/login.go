@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 
 	_ "github.com/lib/pq"
 )
@@ -101,7 +100,6 @@ func LoginAsMultiUser() interface{} {
 		// fmt.Printf("request interceptor uid--> %v\n", uid)
 	}
 
-	var m sync.Mutex
 	response_interceptor := func(resp *http.Response, uid int64) {
 		// fmt.Printf("response interceptor uid--> %v\n", uid)
 
@@ -110,12 +108,10 @@ func LoginAsMultiUser() interface{} {
 		}
 
 		if len(resp.Cookies()) > 0 {
-			m.Lock()
 			if int64(len(*store.GetSessionsRefs())) < concurrent_req {
 				user_data.Cookies = resp.Cookies()
 				store.AppendCSession(user_data)
 			}
-			m.Unlock()
 		}
 	}
 
@@ -125,6 +121,8 @@ func LoginAsMultiUser() interface{} {
 	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
 	fmt.Println("bench mark on api finished")
+
+	store.RequestSideSession_WaitForAppend()
 
 	return map[string]interface{}{
 		"iteration_data": iteration_data,
