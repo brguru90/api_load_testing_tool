@@ -18,14 +18,14 @@ type BenchmarkData struct {
 	Status_codes                    map[int]int64
 	Concurrent_request              int64
 	Total_number_of_request         int64
-	Avg_time_to_complete_api        int64 `json:"Avg_time_to_complete_api_in_millesec,omitempty"`
 	Avg_time_to_connect_api         int64 `json:"Avg_time_to_connect_api_in_millesec,omitempty"`
+	Avg_time_to_complete_api        int64 `json:"Avg_time_to_complete_api_in_millesec,omitempty"`
 	Min_time_to_complete_api        int64 `json:"Min_time_to_complete_api_in_millesec,omitempty"`
 	Max_time_to_complete_api        int64 `json:"Max_time_to_complete_api_in_millesec,omitempty"`
 	Total_time_to_complete_all_apis int64 `json:"Total_time_to_complete_all_apis_in_millesec,omitempty"`
 
-	Avg_time_to_complete_api_in_sec                  float64 `json:"Avg_time_to_complete_api_in_sec,omitempty"`
 	Avg_time_to_connect_api_in_sec                   float64 `json:"Avg_time_to_connect_api_in_sec,omitempty"`
+	Avg_time_to_complete_api_in_sec                  float64 `json:"Avg_time_to_complete_api_in_sec,omitempty"`
 	Min_time_to_complete_api_in_sec                  float64 `json:"Min_time_to_complete_api_in_sec,omitempty"`
 	Max_time_to_complete_api_in_sec                  float64 `json:"Max_time_to_complete_api_in_sec,omitempty"`
 	Total_time_to_complete_all_apis_iteration_in_sec float64 `json:"Total_time_to_complete_all_apis_iteration_in_sec,omitempty"`

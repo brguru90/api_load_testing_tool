@@ -113,8 +113,8 @@ func BenchmarkAPIAsMultiUser(
 			Status_code_in_percentage:       status_code_in_percentage,
 			Status_codes:                    status_codes,
 			Concurrent_request:              concurrent_request,
-			Avg_time_to_complete_api:        avg_time_to_complete_api,
 			Avg_time_to_connect_api:         avg_time_to_connect_api,
+			Avg_time_to_complete_api:        avg_time_to_complete_api,
 			Min_time_to_complete_api:        int64(min_time_to_complete_api),
 			Max_time_to_complete_api:        int64(max_time_to_complete_api),
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
@@ -124,7 +124,7 @@ func BenchmarkAPIAsMultiUser(
 	iterations_end_time := time.Now()
 
 	avg_time_to_complete_api = 0
-	avg_time_to_connect_api =0
+	avg_time_to_connect_api = 0
 	min_time_to_complete_api := math.Inf(1)
 	max_time_to_complete_api := 0.0
 	status_codes := make(map[int]int64)
@@ -148,10 +148,10 @@ func BenchmarkAPIAsMultiUser(
 		Status_codes:                    status_codes,
 		Total_number_of_request:         total_number_of_request,
 		Concurrent_request:              concurrent_request,
+		Avg_time_to_connect_api_in_sec:  (float64(avg_time_to_connect_api) / float64(total_number_of_request)) / 1000,
 		Min_time_to_complete_api_in_sec: min_time_to_complete_api / 1000.0,
 		Max_time_to_complete_api_in_sec: max_time_to_complete_api / 1000.0,
 		Avg_time_to_complete_api_in_sec: (float64(avg_time_to_complete_api) / float64(total_number_of_request)) / 1000,
-		Avg_time_to_connect_api_in_sec:  (float64(avg_time_to_connect_api) / float64(total_number_of_request)) / 1000,
 		Total_time_to_complete_all_apis_iteration_in_sec: float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
 	}
 }
