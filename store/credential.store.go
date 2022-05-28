@@ -44,13 +44,10 @@ func LoginCredential_GetAll() *[]LoginCredential {
 }
 
 func LoginCredential_WaitForAppend() {
-	fmt.Println("LoginCredential_WaitForAppend start")
 	for {
 		if len(login_credential_q) == 0 {
 			break
 		}
 		time.Sleep(time.Second * 1)
 	}
-	fmt.Printf("LoginCredential length => %v\n", len(login_credential))
-	fmt.Println("LoginCredential_WaitForAppend end")
 }

@@ -5,8 +5,6 @@ import (
 	"apis_load_test/my_modules"
 )
 
-func TestAsSingleUser()  {
-	my_modules.LogToJSON(api_requests.SignUp())
+func TestAsSingleUser() {
+	my_modules.LogToJSON(api_requests.SignUp(10000, 1000), nil)
 }
-
-

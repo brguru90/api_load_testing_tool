@@ -13,9 +13,13 @@ func (m *MyError) Error() string {
 	return "Invalid file path"
 }
 
-func LogToJSON(json_obj interface{}) error {
+func LogToJSON(json_obj interface{}, log_path interface{}) error {
 	if LogPath == "" {
 		return &MyError{}
+	}
+	final_log_path := LogPath
+	if log_path != nil {
+		final_log_path = log_path.(string)
 	}
 
 	var _json_bytes []byte
@@ -27,7 +31,7 @@ func LogToJSON(json_obj interface{}) error {
 	// fmt.Println(json_obj)
 	// fmt.Println(string(_json_bytes))
 
-	_file, err := os.OpenFile(LogPath, os.O_RDWR|os.O_CREATE, 0755)
+	_file, err := os.OpenFile(final_log_path, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err
 	}

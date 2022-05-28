@@ -3,13 +3,10 @@ package api_requests
 import (
 	"apis_load_test/my_modules"
 	"apis_load_test/store"
-	"fmt"
 	// "encoding/json"
 )
 
-func SignUp() interface{} {
-	var total_req int64 = 10000
-	var concurrent_req int64 = 1000
+func SignUp(total_req int64, concurrent_req int64) interface{} {
 
 	_url := "http://localhost:8000/api/sign_up/"
 
@@ -43,9 +40,6 @@ func SignUp() interface{} {
 	// 		"description": my_modules.RandomString(100),
 	// 	}
 	// })
-
-	fmt.Println("bench mark on api finished")
-
 	store.LoginCredential_WaitForAppend()
 
 	return map[string]interface{}{
