@@ -61,9 +61,13 @@ func APIReq(
 	uid int64,
 	request_interceptor func(req *http.Request, uid int64),
 	response_interceptor func(resp *http.Response, uid int64),
+	additional_detail_chan chan BenchMarkPerSecondDetail,
 ) (APIData, int64, *http.Response, error) {
 
 	method = strings.ToUpper(method)
+	additional_detail:=BenchMarkPerSecondDetail{
+		request_id: uid,
+	}
 
 	payload, err := JSONMarshal(payload_obj)
 	if err != nil {
@@ -109,11 +113,13 @@ func APIReq(
 
 	start_time := time.Now()
 	var connected_time time.Time = start_time
+	additional_detail.request_sent=start_time
 
 	// https://pkg.go.dev/net/http/httptrace@go1.18.2
 	trace := &httptrace.ClientTrace{
 		GotConn: func(connInfo httptrace.GotConnInfo) {
 			connected_time = time.Now()
+			additional_detail.request_connected=connected_time
 			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
 		},
 		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
@@ -129,6 +135,11 @@ func APIReq(
 
 	resp, err := client.Do(req)
 	end_time := time.Now()
+	additional_detail.request_processed=end_time
+
+	if additional_detail_chan!=nil{
+		additional_detail_chan <- additional_detail
+	}
 
 	if err != nil {
 

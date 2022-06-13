@@ -31,6 +31,10 @@ func GetSessionsRefs() *[]RequestSideSession {
 	return &req_sessions
 }
 
+func GetSessionsCount() int{
+	return len(req_sessions)
+}
+
 func ResetSessions() {
 	req_sessions = []RequestSideSession{}
 }

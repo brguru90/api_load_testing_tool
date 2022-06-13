@@ -90,7 +90,7 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	payload_generator_callback := func(current_iteration int64) map[string]interface{} {
 		return map[string]interface{}{
 			// "email": all_users_email[current_iteration],
-			"email": store.LoginCredential_Get(current_iteration).Email,
+			"email": store.LoginCredential_Get(current_iteration%concurrent_req).Email,
 		}
 	}
 
@@ -106,7 +106,9 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 		}
 
 		if len(resp.Cookies()) > 0 {
-			if int64(len(*store.GetSessionsRefs())) < concurrent_req {
+			// condition check may not work all time since data is pushed concurrently`
+			if  int64(store.GetSessionsCount())<concurrent_req && uid<concurrent_req{
+				fmt.Printf("response interceptor uid--> %v\n", uid)
 				user_data.Cookies = resp.Cookies()
 				store.AppendCSession(user_data)
 			}
@@ -115,12 +117,12 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 
 	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "post", headers, nil, payload_generator_callback, request_interceptor, response_interceptor)
 
-	fmt.Printf("total collected cookies %d\n", len(*store.GetSessionsRefs()))
-	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
 	fmt.Println("bench mark on api finished")
 
 	store.RequestSideSession_WaitForAppend()
+	fmt.Printf("total collected cookies %d\n", store.GetSessionsCount())
+	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
 	return map[string]interface{}{
 		"iteration_data": iteration_data,

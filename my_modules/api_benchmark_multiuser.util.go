@@ -21,6 +21,7 @@ func BenchmarkAPIAsMultiUser(
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
+	additional_details:=make(chan BenchMarkPerSecondDetail,total_number_of_request*concurrent_request)
 
 	if total_number_of_request < concurrent_request {
 		panic("total_number_of_request<concurrent_request")
@@ -44,7 +45,7 @@ func BenchmarkAPIAsMultiUser(
 		// run whole parallel request routine in background
 		// so that i can loop through channel data later
 		iteration_wg.Add(1)
-		go func() {
+		go func(main_iteration int64) {
 			defer iteration_wg.Done()
 			// spin up all request parallally & wait for all those to finish
 			concurrent_req_wg.Add(int(concurrent_request))
@@ -58,7 +59,7 @@ func BenchmarkAPIAsMultiUser(
 					} else {
 						api_payload = payload_obj
 					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor)
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor,additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
@@ -67,12 +68,12 @@ func BenchmarkAPIAsMultiUser(
 						Err:                  err,
 					}
 					// fmt.Printf("finish channel\n")
-				}(j)
+				}((main_iteration*concurrent_request)+j)
 			}
 			concurrent_req_wg.Wait()
 			// fmt.Println("all the parallel request finished")
 			close(messages)
-		}()
+		}(i)
 
 		avg_time_to_complete_api = 0
 		avg_time_to_connect_api = 0
@@ -142,6 +143,18 @@ func BenchmarkAPIAsMultiUser(
 		avg_time_to_complete_api += _each_iterations_data.Avg_time_to_complete_api
 		avg_time_to_connect_api += _each_iterations_data.Avg_time_to_connect_api
 	}
+
+	// var additional_detail_iteration_wg sync.WaitGroup
+	// track_iteration_time:=iterations_start_time	
+
+	// for{
+	// 	if track_iteration_time.After(iterations_end_time){
+	// 		break
+	// 	}
+
+
+	// }
+	
 
 	return &each_iterations_data, &BenchmarkData{
 		Url:                             _url,

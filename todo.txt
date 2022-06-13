@@ -17,7 +17,7 @@
    & measuring Bandwidth will also cause less effect/error on metrics
 
 
-
+   append to queue
    {
       request_id:number,
       status:[
@@ -32,3 +32,14 @@
    iterate from api benchmark start time to end time, & increase second by one,
    get the average count for request within second & average over all iterations
    
+
+   clear queue for that api
+
+
+   0-0,999
+   1-1000,1999
+   2-2000,2999
+   3-3000,3999
+   3000%1000=0
+   3001%1000=1
+   3999%1000=999

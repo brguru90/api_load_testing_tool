@@ -1,6 +1,9 @@
 package my_modules
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // total_number_of_request: Total number of request
 // concurrent_request: Number of parallel request per each iteration
@@ -30,3 +33,13 @@ type BenchmarkData struct {
 	Max_time_to_complete_api_in_sec                  float64 `json:"Max_time_to_complete_api_in_sec,omitempty"`
 	Total_time_to_complete_all_apis_iteration_in_sec float64 `json:"Total_time_to_complete_all_apis_iteration_in_sec,omitempty"`
 }
+
+type BenchMarkPerSecondDetail struct {
+	request_id int64
+	request_sent time.Time
+	request_connected time.Time
+	request_processed time.Time
+}
+
+
+
