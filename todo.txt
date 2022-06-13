@@ -1,5 +1,5 @@
 * need to measure request per seconds
-   - total request recived/connected in a second
+   - total request connected in a second
    - total response sent in second
    - total request sent & same is processed in that second
 
@@ -15,3 +15,20 @@
    the "payload_generator_callback" generator should be called & store the payloads before start sending request
    so any computational intensive task will not effect bench mark metrics
    & measuring Bandwidth will also cause less effect/error on metrics
+
+
+
+   {
+      request_id:number,
+      status:[
+         {
+            sent:time,
+            connected:time,
+            proccessed:time,
+         }
+      ]
+   }
+
+   iterate from api benchmark start time to end time, & increase second by one,
+   get the average count for request within second & average over all iterations
+   
