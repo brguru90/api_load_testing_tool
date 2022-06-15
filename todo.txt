@@ -1,12 +1,3 @@
-* need to measure request per seconds
-   - total request connected in a second
-   - total response sent in second
-   - total request sent & same is processed in that second
-
-   both average per each iteration & overall iteration
-
-* need to add millisecond representaion of delay along with seconds in "all_data"
-* need to add status code in perecentage along with actual count in "all_data"
 * change "all_data" key to "overall metric"
 *  Bandwidth (kilo bytes in/out per second)
    1. total request payload sent in size
