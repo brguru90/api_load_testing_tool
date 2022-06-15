@@ -21,7 +21,6 @@ func BenchmarkAPIAsMultiUser(
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
-	additional_details:=make(chan BenchMarkPerSecondDetail,total_number_of_request*concurrent_request)
 
 	if total_number_of_request < concurrent_request {
 		panic("total_number_of_request<concurrent_request")
@@ -39,6 +38,7 @@ func BenchmarkAPIAsMultiUser(
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
 		messages := make(chan MessageType)
+		additional_details := make(chan BenchMarkPerSecondDetail, concurrent_request)
 		fmt.Printf("url=%s,i=%v\n", _url, i)
 
 		concurrent_req_start_time := time.Now()
@@ -59,7 +59,7 @@ func BenchmarkAPIAsMultiUser(
 					} else {
 						api_payload = payload_obj
 					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor,additional_details)
+					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
@@ -68,11 +68,12 @@ func BenchmarkAPIAsMultiUser(
 						Err:                  err,
 					}
 					// fmt.Printf("finish channel\n")
-				}((main_iteration*concurrent_request)+j)
+				}((main_iteration * concurrent_request) + j)
 			}
 			concurrent_req_wg.Wait()
 			// fmt.Println("all the parallel request finished")
 			close(messages)
+			close(additional_details)
 		}(i)
 
 		avg_time_to_complete_api = 0
@@ -109,6 +110,51 @@ func BenchmarkAPIAsMultiUser(
 			status_code_in_percentage[status_code] = (float64(occurrence) / float64(concurrent_request)) * 100
 		}
 
+		var additional_details_arr []BenchMarkPerSecondDetail
+		for additional_detail := range additional_details {
+			additional_details_arr = append(additional_details_arr, additional_detail)
+		}
+
+		// var request_sent_in_sec_avg,request_connected_in_sec_avg,request_processed_in_sec_avg time.Time
+		track_iteration_time := concurrent_req_start_time
+		prev_iteration_time := concurrent_req_start_time
+		track_iteration_time=track_iteration_time.Add(time.Second * 1)
+		var per_second_metrics []BenchMarkPerSecondCount
+		// var _request_sent_in_sec_avg, _request_connected_in_sec_avg, _request_processed_in_sec_avg int64
+		if len(additional_details_arr)>0 {
+			for {
+				// fmt.Printf("prev_iteration_time=%v,track_iteration_time=%v\n",prev_iteration_time,track_iteration_time)
+				var _request_sent_in_sec, _request_connected_in_sec, _request_processed_in_sec int64
+				for _, additional_detail := range additional_details_arr {
+					if additional_detail.request_sent.After(prev_iteration_time) && additional_detail.request_sent.Before(track_iteration_time) {
+						_request_sent_in_sec++
+					}
+					if additional_detail.request_connected.After(prev_iteration_time) && additional_detail.request_connected.Before(track_iteration_time) {
+						_request_connected_in_sec++
+					}
+					if additional_detail.request_processed.After(prev_iteration_time) && additional_detail.request_processed.Before(track_iteration_time) {
+						_request_processed_in_sec++
+					}
+				}
+				per_second_metrics = append(per_second_metrics, BenchMarkPerSecondCount{
+					From_time_duration: prev_iteration_time,
+					To_time_duration:   track_iteration_time,
+					Request_sent:       _request_sent_in_sec,
+					Request_connected:  _request_connected_in_sec,
+					Request_processed:  _request_processed_in_sec,
+				})
+
+
+				// iterate over elapsed time
+				if track_iteration_time.After(concurrent_req_end_time) {
+					break
+				}
+
+				prev_iteration_time = track_iteration_time
+				track_iteration_time = track_iteration_time.Add(time.Second * 1)
+			}
+		}
+
 		each_iterations_data = append(each_iterations_data, BenchmarkData{
 			Url:                             _url,
 			Status_code_in_percentage:       status_code_in_percentage,
@@ -119,6 +165,7 @@ func BenchmarkAPIAsMultiUser(
 			Min_time_to_complete_api:        int64(min_time_to_complete_api),
 			Max_time_to_complete_api:        int64(max_time_to_complete_api),
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
+			Benchmark_per_second_metric:     per_second_metrics,
 		})
 
 	}
@@ -143,18 +190,6 @@ func BenchmarkAPIAsMultiUser(
 		avg_time_to_complete_api += _each_iterations_data.Avg_time_to_complete_api
 		avg_time_to_connect_api += _each_iterations_data.Avg_time_to_connect_api
 	}
-
-	// var additional_detail_iteration_wg sync.WaitGroup
-	// track_iteration_time:=iterations_start_time	
-
-	// for{
-	// 	if track_iteration_time.After(iterations_end_time){
-	// 		break
-	// 	}
-
-
-	// }
-	
 
 	return &each_iterations_data, &BenchmarkData{
 		Url:                             _url,
