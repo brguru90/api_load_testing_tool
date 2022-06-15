@@ -8,7 +8,7 @@ import (
 )
 
 func TestAsMultiUser() {
-	my_modules.LogToJSON(api_requests.LoginAsMultiUser(1000, 100), nil)
+	my_modules.LogToJSON(api_requests.LoginAsMultiUser(100000, 10000), nil)
 	fmt.Println("--> LoginAsMultiUser finished")
 	// my_modules.LogToJSON(user.GetUserDetailAsMultiUser("http://localhost:8000/api/user/", 1000, 100), nil)
 	// go func() {
