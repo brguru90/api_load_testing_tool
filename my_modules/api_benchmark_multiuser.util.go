@@ -118,10 +118,10 @@ func BenchmarkAPIAsMultiUser(
 		// var request_sent_in_sec_avg,request_connected_in_sec_avg,request_processed_in_sec_avg time.Time
 		track_iteration_time := concurrent_req_start_time
 		prev_iteration_time := concurrent_req_start_time
-		track_iteration_time=track_iteration_time.Add(time.Second * 1)
+		track_iteration_time = track_iteration_time.Add(time.Second * 1)
 		var per_second_metrics []BenchMarkPerSecondCount
 		// var _request_sent_in_sec_avg, _request_connected_in_sec_avg, _request_processed_in_sec_avg int64
-		if len(additional_details_arr)>0 {
+		if len(additional_details_arr) > 0 {
 			for {
 				// fmt.Printf("prev_iteration_time=%v,track_iteration_time=%v\n",prev_iteration_time,track_iteration_time)
 				var _request_sent_in_sec, _request_connected_in_sec, _request_processed_in_sec int64
@@ -143,7 +143,6 @@ func BenchmarkAPIAsMultiUser(
 					Request_connected:  _request_connected_in_sec,
 					Request_processed:  _request_processed_in_sec,
 				})
-
 
 				// iterate over elapsed time
 				if track_iteration_time.After(concurrent_req_end_time) {
@@ -191,9 +190,15 @@ func BenchmarkAPIAsMultiUser(
 		avg_time_to_connect_api += _each_iterations_data.Avg_time_to_connect_api
 	}
 
+	status_codes_in_perc := make(map[int]float64)
+	for status_code, occurrence := range status_codes {
+		status_codes_in_perc[status_code] = (float64(occurrence) / float64(total_number_of_request)) * 100.0
+	}
+
 	return &each_iterations_data, &BenchmarkData{
 		Url:                             _url,
 		Status_codes:                    status_codes,
+		Status_code_in_percentage:       status_codes_in_perc,
 		Total_number_of_request:         total_number_of_request,
 		Concurrent_request:              concurrent_request,
 		Avg_time_to_connect_api_in_sec:  (float64(avg_time_to_connect_api) / float64(total_number_of_request)) / 1000,

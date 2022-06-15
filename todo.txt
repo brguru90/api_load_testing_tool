@@ -16,30 +16,8 @@
    so any computational intensive task will not effect bench mark metrics
    & measuring Bandwidth will also cause less effect/error on metrics
 
-
-   append to queue
-   {
-      request_id:number,
-      status:[
-         {
-            sent:time,
-            connected:time,
-            proccessed:time,
-         }
-      ]
-   }
-
-   iterate from api benchmark start time to end time, & increase second by one,
-   get the average count for request within second & average over all iterations
-   
-
-   clear queue for that api
-
-
-   0-0,999
-   1-1000,1999
-   2-2000,2999
-   3-3000,3999
-   3000%1000=0
-   3001%1000=1
-   3999%1000=999
+* try, to create benchmark runner client & to make a decentralized client, so we can achive unique IP address
+benchmark server should distribute/assign size & time of API call(could be real time or planned) to the benchmark runner client
+& benchmark client should be scalable in a flexible way
+i think testing can be done using docker,
+& can be released as docker image and the code will be mounted to host drive, so user can write api calls,payload etc
