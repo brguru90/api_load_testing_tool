@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
@@ -61,11 +63,11 @@ func APIReq(
 	uid int64,
 	request_interceptor func(req *http.Request, uid int64),
 	response_interceptor func(resp *http.Response, uid int64),
-	additional_detail_chan chan BenchMarkPerSecondDetail,
+	additional_detail_chan chan AdditionalAPIDetails,
 ) (APIData, int64, *http.Response, error) {
 
 	method = strings.ToUpper(method)
-	additional_detail:=BenchMarkPerSecondDetail{
+	additional_detail := AdditionalAPIDetails{
 		request_id: uid,
 	}
 
@@ -111,15 +113,36 @@ func APIReq(
 		request_interceptor(req, uid)
 	}
 
+	var request_size int = 0
+	if req.Body!=nil && req.ContentLength!=0{
+		var req_body_copy bytes.Buffer
+		_, io_err := io.Copy(&req_body_copy, req.Body)
+		if io_err == nil {
+			request_size = len(req_body_copy.Bytes())
+			reader := bytes.NewReader(req_body_copy.Bytes())
+			req.Body = ioutil.NopCloser(reader)
+		}
+	}
+	header_string:=""
+	if req.Header!=nil{
+		for key,value :=range req.Header{
+			header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
+		}
+	}
+	request_size+=len([]byte(header_string))
+
+	// start of time difference calculation
+
 	start_time := time.Now()
 	var connected_time time.Time = start_time
-	additional_detail.request_sent=start_time
+	additional_detail.request_sent = start_time
+	additional_detail.request_payload_size = request_size
 
 	// https://pkg.go.dev/net/http/httptrace@go1.18.2
 	trace := &httptrace.ClientTrace{
 		GotConn: func(connInfo httptrace.GotConnInfo) {
 			connected_time = time.Now()
-			additional_detail.request_connected=connected_time
+			additional_detail.request_connected = connected_time
 			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
 		},
 		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
@@ -128,16 +151,36 @@ func APIReq(
 	}
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 
-
 	client := &http.Client{
 		Timeout: HTTPTimeout,
 	}
 
 	resp, err := client.Do(req)
 	end_time := time.Now()
-	additional_detail.request_processed=end_time
+	additional_detail.request_processed = end_time
 
-	if additional_detail_chan!=nil{
+	// end of time difference calculation
+
+	var response_size int = 0
+	if resp.Body!=nil && resp.ContentLength!=0{
+		var resp_body_copy bytes.Buffer
+		_, io_err := io.Copy(&resp_body_copy, resp.Body)
+		if io_err == nil {
+			response_size = len(resp_body_copy.Bytes())
+			reader := bytes.NewReader(resp_body_copy.Bytes())
+			resp.Body = ioutil.NopCloser(reader)
+		}
+	}
+	response_header_string:=""
+	if req.Header!=nil{
+		for key,value :=range resp.Header{
+			response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
+		}
+	}
+	response_size+=len([]byte(response_header_string))
+	additional_detail.response_payload_size=response_size
+
+	if additional_detail_chan != nil {
 		additional_detail_chan <- additional_detail
 	}
 
@@ -161,6 +204,7 @@ func APIReq(
 	if payload_obj != nil {
 		defer req.Body.Close()
 	}
+
 	json_body := make(map[string]interface{})
 	var body []byte = nil
 	if strings.Contains(resp.Header.Get("Content-Type"), "json") {

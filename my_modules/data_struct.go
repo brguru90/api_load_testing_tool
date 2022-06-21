@@ -27,25 +27,33 @@ type BenchmarkData struct {
 	Max_time_to_complete_api        int64                     `json:"Max_time_to_complete_api_in_millesec,omitempty"`
 	Total_time_to_complete_all_apis int64                     `json:"Total_time_to_complete_all_apis_in_millesec,omitempty"`
 	Benchmark_per_second_metric     []BenchMarkPerSecondCount `json:"Benchmark_per_second_metric,omitempty"`
+	Average_request_payload_size    float64                   `json:"Average_request_payload_size_in_bytes,omitempty"`
+	Average_response_payload_size   float64                   `json:"Average_response_payload_size_in_bytes,omitempty"`
 
 	Avg_time_to_connect_api_in_sec                   float64 `json:"Avg_time_to_connect_api_in_sec,omitempty"`
 	Avg_time_to_complete_api_in_sec                  float64 `json:"Avg_time_to_complete_api_in_sec,omitempty"`
 	Min_time_to_complete_api_in_sec                  float64 `json:"Min_time_to_complete_api_in_sec,omitempty"`
 	Max_time_to_complete_api_in_sec                  float64 `json:"Max_time_to_complete_api_in_sec,omitempty"`
 	Total_time_to_complete_all_apis_iteration_in_sec float64 `json:"Total_time_to_complete_all_apis_iteration_in_sec,omitempty"`
+	Average_request_payload_size_in_all_iteration    float64 `json:"Average_request_payload_size_in_bytes_in_all_iteration,omitempty"`
+	Average_response_payload_size_in_all_iteration   float64 `json:"Average_response_payload_size_in_bytes_in_all_iteration,omitempty"`
 }
 
-type BenchMarkPerSecondDetail struct {
-	request_id        int64
-	request_sent      time.Time
-	request_connected time.Time
-	request_processed time.Time
+type AdditionalAPIDetails struct {
+	request_id            int64
+	request_sent          time.Time
+	request_connected     time.Time
+	request_processed     time.Time
+	request_payload_size  int
+	response_payload_size int
 }
 
 type BenchMarkPerSecondCount struct {
-	From_time_duration time.Time
-	To_time_duration   time.Time
-	Request_sent       int64
-	Request_connected  int64
-	Request_processed  int64
+	From_time_duration                   time.Time
+	To_time_duration                     time.Time
+	Request_sent                         int64
+	Request_connected                    int64
+	Request_processed                    int64
+	Total_request_payload_size_in_bytes  float64
+	Total_response_payload_size_in_bytes float64
 }
