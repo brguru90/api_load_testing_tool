@@ -136,15 +136,15 @@ func BenchmarkAPIAsMultiUser(
 				for _, additional_detail := range additional_details_arr {
 					if additional_detail.request_sent.After(prev_iteration_time) && additional_detail.request_sent.Before(track_iteration_time) {
 						_request_sent_in_sec++
+						request_payload_size += float64(additional_detail.request_payload_size)
 					}
 					if additional_detail.request_connected.After(prev_iteration_time) && additional_detail.request_connected.Before(track_iteration_time) {
 						_request_connected_in_sec++
 					}
 					if additional_detail.request_processed.After(prev_iteration_time) && additional_detail.request_processed.Before(track_iteration_time) {
 						_request_processed_in_sec++
+						response_payload_size += float64(additional_detail.response_payload_size)
 					}
-					request_payload_size += float64(additional_detail.request_payload_size)
-					response_payload_size += float64(additional_detail.response_payload_size)
 				}
 				per_second_metrics = append(per_second_metrics, BenchMarkPerSecondCount{
 					From_time_duration:                   prev_iteration_time,
