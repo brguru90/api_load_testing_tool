@@ -60,6 +60,10 @@ func BenchmarkAPIAsMultiUser(
 			defer iteration_wg.Done()
 			// spin up all request parallally & wait for all those to finish
 			concurrent_req_wg.Add(int(concurrent_request))
+			// todo:
+			// here benchmark server will distribute request to runner client
+			// wait for all to complete
+			// & then collect metrics
 			for j = 0; j < concurrent_request; j++ {
 				// fmt.Printf("%v-%v\n", i, j)
 				go func(sub_iteration int64) {
