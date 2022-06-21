@@ -53,7 +53,8 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	err := encoder.Encode(t)
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
-
+// make http request 
+// get the metrics like delay, payload size etc for particular request
 func APIReq(
 	_url string,
 	method string,

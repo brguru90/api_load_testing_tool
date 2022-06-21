@@ -7,7 +7,9 @@ import (
 	"sync"
 	"time"
 )
-
+// run the http request concurrently with set of iteration
+// collect the metric & calculate the metric for concurrent request & for all iteration
+// have the callback to generate payload, intercept request & response
 func BenchmarkAPIAsMultiUser(
 	total_number_of_request int64,
 	concurrent_request int64,
