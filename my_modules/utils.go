@@ -5,11 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
+	"net/http/httputil"
 	"strings"
 	"time"
 )
@@ -114,22 +113,27 @@ func APIReq(
 	}
 
 	var request_size int = 0
-	if req.Body!=nil && req.ContentLength!=0{
-		var req_body_copy bytes.Buffer
-		_, io_err := io.Copy(&req_body_copy, req.Body)
-		if io_err == nil {
-			request_size = len(req_body_copy.Bytes())
-			reader := bytes.NewReader(req_body_copy.Bytes())
-			req.Body = ioutil.NopCloser(reader)
-		}
-	}
-	header_string:=""
-	if req.Header!=nil{
-		for key,value :=range req.Header{
-			header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
-		}
-	}
-	request_size+=len([]byte(header_string))
+	// if req.Body!=nil && req.ContentLength!=0{
+	// 	var req_body_copy bytes.Buffer
+	// 	_, io_err := io.Copy(&req_body_copy, req.Body)
+	// 	if io_err == nil {
+	// 		request_size = len(req_body_copy.Bytes())
+	// 		reader := bytes.NewReader(req_body_copy.Bytes())
+	// 		req.Body = ioutil.NopCloser(reader)
+	// 	}
+	// }
+	// header_string:=""
+	// if req.Header!=nil{
+	// 	for key,value :=range req.Header{
+	// 		header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
+	// 	}
+	// }
+	// request_size+=len([]byte(header_string))
+
+	reqDump, err := httputil.DumpRequestOut(req, true)
+    if err == nil {
+        request_size=len(reqDump)
+    }
 
 	// start of time difference calculation
 
@@ -162,22 +166,28 @@ func APIReq(
 	// end of time difference calculation
 
 	var response_size int = 0
-	if resp.Body!=nil && resp.ContentLength!=0{
-		var resp_body_copy bytes.Buffer
-		_, io_err := io.Copy(&resp_body_copy, resp.Body)
-		if io_err == nil {
-			response_size = len(resp_body_copy.Bytes())
-			reader := bytes.NewReader(resp_body_copy.Bytes())
-			resp.Body = ioutil.NopCloser(reader)
-		}
-	}
-	response_header_string:=""
-	if req.Header!=nil{
-		for key,value :=range resp.Header{
-			response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
-		}
-	}
-	response_size+=len([]byte(response_header_string))
+	// if resp.Body!=nil && resp.ContentLength!=0{
+	// 	var resp_body_copy bytes.Buffer
+	// 	_, io_err := io.Copy(&resp_body_copy, resp.Body)
+	// 	if io_err == nil {
+	// 		response_size = len(resp_body_copy.Bytes())
+	// 		reader := bytes.NewReader(resp_body_copy.Bytes())
+	// 		resp.Body = ioutil.NopCloser(reader)
+	// 	}
+	// }
+	// response_header_string:=""
+	// if req.Header!=nil{
+	// 	for key,value :=range resp.Header{
+	// 		response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
+	// 	}
+	// }
+	// response_size+=len([]byte(response_header_string))
+
+	respDump, err := httputil.DumpResponse(resp, true)
+    if err == nil {
+        response_size=len(respDump)
+    }
+
 	additional_detail.response_payload_size=response_size
 
 	if additional_detail_chan != nil {

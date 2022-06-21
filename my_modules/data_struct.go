@@ -27,6 +27,7 @@ type BenchmarkData struct {
 	Max_time_to_complete_api        int64                     `json:"Max_time_to_complete_api_in_millesec,omitempty"`
 	Total_time_to_complete_all_apis int64                     `json:"Total_time_to_complete_all_apis_in_millesec,omitempty"`
 	Benchmark_per_second_metric     []BenchMarkPerSecondCount `json:"Benchmark_per_second_metric,omitempty"`
+	// it may not accurate because its not the size of whole raw request
 	Average_request_payload_size    float64                   `json:"Average_request_payload_size_in_bytes,omitempty"`
 	Average_response_payload_size   float64                   `json:"Average_response_payload_size_in_bytes,omitempty"`
 
