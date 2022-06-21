@@ -19,6 +19,15 @@ func BenchmarkAPIAsMultiUser(
 	response_interceptor func(resp *http.Response, uid int64),
 ) (*[]BenchmarkData, *BenchmarkData) {
 
+	// Todo:
+	// need to make an wrapper
+	// which distribute set of loads/calculated number of concurrent request's size & payload details
+	// to a group of connected benchmark runner client
+	// benchmark runner client can be connected by websocket/gRPC protocol
+	// later metrics from all client will be sent back to benchmark server
+	// & should also support as standalone benchmark tool when no runner configured/connected
+	// connection should be established from runner client in private network to single publicly hosted server
+
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
 
