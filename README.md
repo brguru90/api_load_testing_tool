@@ -14,6 +14,6 @@ here demonstrated benchmark on
 ### like apache benchmark, its support to set total request to send & level of concurrency for the each bulk requests
 ### allows user to feed dynamic input payload like, username, password
 ### allow user to benchmark multiple API in the single script
-### in a script user can call benchmark api multiple type & paralley, user can collect data from one API & use the extracted data to next API
+### in a script user can call benchmark api multiple type & parallelly, user can collect data from one API & use the extracted data to next API
 ### allows user to intercept request & response, example usage is to intercept response to collect cookie and then intercept next request to attach cookie
 ### for now the data is collected in API, have plan to show summarised graphical data like charts of live update
