@@ -41,10 +41,45 @@ func BenchmarkAPIAsMultiUser(
 		panic("(total_number_of_request % concurrent_request)!=0")
 	}
 
-	var concurrent_req_wg sync.WaitGroup
-	var iteration_wg sync.WaitGroup
+	var concurrent_req_wg,rh_concurrent_req_wg sync.WaitGroup
+	var iteration_wg,rh_iteration_wg sync.WaitGroup
 
 	var i, j, avg_time_to_complete_api, avg_time_to_connect_api int64
+
+	requests_ahead:= make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request) 
+
+	for i = 0; i < number_of_iteration; i++ {
+		rh_iteration_wg.Add(1)
+		go func(main_iteration int64) {
+			defer rh_iteration_wg.Done()
+			rh_concurrent_req_wg.Add(int(concurrent_request))
+			for j = 0; j < concurrent_request; j++ {
+				go func(sub_iteration int64) {
+					defer rh_concurrent_req_wg.Done()
+					var api_payload map[string]interface{}
+					if payload_obj == nil && payload_generator_callback != nil {
+						api_payload = payload_generator_callback(sub_iteration)
+					} else {
+						api_payload = payload_obj
+					}
+					requests_ahead <- CreateAPIRequest(_url, method, headers, api_payload, sub_iteration, request_interceptor)
+					// fmt.Printf("requests_ahead %d->%d<%d\n",(main_iteration * concurrent_request) + j,len(requests_ahead),number_of_iteration*concurrent_request)
+				}((main_iteration * concurrent_request) + j)				
+			}
+			rh_concurrent_req_wg.Wait()
+
+		}(i)
+		rh_iteration_wg.Wait()
+	}
+	// fmt.Printf("requests_ahead %d<%d\n",len(requests_ahead),number_of_iteration*concurrent_request)
+	close(requests_ahead)
+
+	var request_ahead_array []CreatedAPIRequestFormat
+	for request_ahead :=range requests_ahead{
+		request_ahead_array = append(request_ahead_array, request_ahead)
+	}
+
+
 
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
@@ -68,13 +103,8 @@ func BenchmarkAPIAsMultiUser(
 				// fmt.Printf("%v-%v\n", i, j)
 				go func(sub_iteration int64) {
 					defer concurrent_req_wg.Done()
-					var api_payload map[string]interface{}
-					if payload_obj == nil && payload_generator_callback != nil {
-						api_payload = payload_generator_callback(sub_iteration)
-					} else {
-						api_payload = payload_obj
-					}
-					data, time_to_complete_api, res, err := APIReq(_url, method, headers, api_payload, sub_iteration, request_interceptor, response_interceptor, additional_details)
+					
+					data, time_to_complete_api, res, err := APIReq(request_ahead_array[sub_iteration], response_interceptor, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,

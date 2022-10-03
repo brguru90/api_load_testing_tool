@@ -30,6 +30,15 @@ type APIData struct {
 	context_data ContextData
 }
 
+type CreatedAPIRequestFormat struct{
+	req *http.Request
+	request_size int
+	err error
+	payload map[string]interface{}
+	url string
+	uid int64
+}
+
 func RandomBytes(size int) (blk []byte, err error) {
 	blk = make([]byte, size)
 	_, err = rand.Read(blk)
@@ -53,35 +62,20 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	err := encoder.Encode(t)
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
-// make http request 
-// get the metrics like delay, payload size etc for particular request
-func APIReq(
+
+func CreateAPIRequest(
 	_url string,
 	method string,
 	header map[string]string,
 	payload_obj map[string]interface{},
 	uid int64,
 	request_interceptor func(req *http.Request, uid int64),
-	response_interceptor func(resp *http.Response, uid int64),
-	additional_detail_chan chan AdditionalAPIDetails,
-) (APIData, int64, *http.Response, error) {
+) (CreatedAPIRequestFormat)  {
 
 	method = strings.ToUpper(method)
-	additional_detail := AdditionalAPIDetails{
-		request_id: uid,
-	}
 
 	payload, err := JSONMarshal(payload_obj)
-	if err != nil {
-		return APIData{
-			url:     _url,
-			context: "json.Marshal",
-			context_data: ContextData{
-				status_code: -1,
-				payload:     payload_obj,
-			},
-		}, 0, nil, err
-	}
+	
 
 	var req *http.Request
 	switch method {
@@ -93,15 +87,14 @@ func APIReq(
 		req, err = http.NewRequest(method, _url, nil)
 	}
 	if err != nil {
-
-		return APIData{
-			url:     _url,
-			context: "API request creation",
-			context_data: ContextData{
-				status_code: -1,
-				payload:     payload_obj,
-			},
-		}, 0, nil, err
+		return CreatedAPIRequestFormat{
+			req: nil,
+			request_size: -1,
+			err: err,
+			payload: payload_obj,
+			url: _url,
+			uid: uid,
+		}
 	}
 
 	// req.Header.Add("Content-Type", "application/json")
@@ -114,34 +107,53 @@ func APIReq(
 	}
 
 	var request_size int = 0
-	// if req.Body!=nil && req.ContentLength!=0{
-	// 	var req_body_copy bytes.Buffer
-	// 	_, io_err := io.Copy(&req_body_copy, req.Body)
-	// 	if io_err == nil {
-	// 		request_size = len(req_body_copy.Bytes())
-	// 		reader := bytes.NewReader(req_body_copy.Bytes())
-	// 		req.Body = ioutil.NopCloser(reader)
-	// 	}
-	// }
-	// header_string:=""
-	// if req.Header!=nil{
-	// 	for key,value :=range req.Header{
-	// 		header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
-	// 	}
-	// }
-	// request_size+=len([]byte(header_string))
 
 	reqDump, err := httputil.DumpRequestOut(req, true)
     if err == nil {
         request_size=len(reqDump)
     }
 
-	// start of time difference calculation
+	return CreatedAPIRequestFormat{
+		req: req,
+		request_size: request_size,
+		err: nil,
+		payload: payload_obj,
+		url: _url,
+		uid: uid,
+	}
+	
+}
+
+
+// make http request 
+// get the metrics like delay, payload size etc for particular request
+func APIReq(
+	api_request CreatedAPIRequestFormat,
+	response_interceptor func(resp *http.Response, uid int64),
+	additional_detail_chan chan AdditionalAPIDetails,
+) (APIData, int64, *http.Response, error) {
+	uid:=api_request.uid
+	additional_detail := AdditionalAPIDetails{
+		request_id: uid,
+	}
+
+
+	if api_request.err != nil {
+		return APIData{
+			url:     api_request.url,
+			context: "json.Marshal",
+			context_data: ContextData{
+				status_code: -1,
+				payload:     api_request.payload,
+			},
+		}, 0, nil, api_request.err
+	}
+	
 
 	start_time := time.Now()
 	var connected_time time.Time = start_time
 	additional_detail.request_sent = start_time
-	additional_detail.request_payload_size = request_size
+	additional_detail.request_payload_size = api_request.request_size
 
 	// https://pkg.go.dev/net/http/httptrace@go1.18.2
 	trace := &httptrace.ClientTrace{
@@ -154,7 +166,7 @@ func APIReq(
 		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
 		// },
 	}
-	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	req := api_request.req.WithContext(httptrace.WithClientTrace(api_request.req.Context(), trace))
 
 	client := &http.Client{
 		Timeout: HTTPTimeout,
@@ -198,11 +210,11 @@ func APIReq(
 	if err != nil {
 
 		return APIData{
-			url:     _url,
+			url:     api_request.url,
 			context: "API request send",
 			context_data: ContextData{
 				status_code: -1,
-				payload:     payload_obj,
+				payload:     api_request.payload,
 			},
 		}, end_time.Sub(start_time).Milliseconds(), nil, err
 	}
@@ -212,7 +224,7 @@ func APIReq(
 	}
 
 	defer resp.Body.Close()
-	if payload_obj != nil {
+	if api_request.payload != nil {
 		defer req.Body.Close()
 	}
 
@@ -226,11 +238,11 @@ func APIReq(
 	}
 
 	return APIData{
-		url:     _url,
+		url:     api_request.url,
 		context: "API response",
 		context_data: ContextData{
 			status_code:     resp.StatusCode,
-			payload:         payload_obj,
+			payload:         api_request.payload,
 			json_body:       json_body,
 			body:            body,
 			time:            end_time.Sub(start_time).Milliseconds(),
