@@ -53,7 +53,8 @@
     },
     "rules": {
         "react/jsx-uses-react": "error",
-        "react/jsx-uses-vars": "warn",
+        "react/jsx-uses-vars": "error",
+        "no-unused-vars": "off",
         "react/jsx-filename-extension": [1, {"extensions": [".js", ".jsx"]}],
         "react/forbid-prop-types": [0, {"forbid": ["any"]}],
         "react/prop-types": 0       
