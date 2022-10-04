@@ -172,6 +172,17 @@ func APIReq(
 	end_time := time.Now()
 	additional_detail.request_processed = end_time
 
+	if err != nil {
+		return APIData{
+			url:     api_request.url,
+			context: "client.Do",
+			context_data: ContextData{
+				status_code: -1,
+				payload:     api_request.payload,
+			},
+		}, 0, nil, err
+	}
+
 	// end of time difference calculation
 
 	var response_size int = 0
@@ -204,7 +215,6 @@ func APIReq(
 	}
 
 	if err != nil {
-
 		return APIData{
 			url:     api_request.url,
 			context: "API request send",
