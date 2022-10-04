@@ -68,7 +68,7 @@ func BenchmarkAPIAsMultiUser(
 	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
 	var iteration_wg, rh_iteration_wg sync.WaitGroup
 
-	var i, j, avg_time_to_complete_api, avg_time_to_connect_api int64
+	var i, j, total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api int64
 
 	requests_ahead := make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request)
 
@@ -281,6 +281,7 @@ func BenchmarkAPIAsMultiUser(
 		avg_time_to_connect_api += _each_iterations_data.Avg_time_to_connect_api
 		avg_request_payload_size += _each_iterations_data.Average_request_payload_size
 		avg_response_payload_size += _each_iterations_data.Average_response_payload_size
+		total_time_to_complete_api += _each_iterations_data.Total_time_to_complete_all_apis
 	}
 
 	status_codes_in_perc := make(map[int]float64)
@@ -300,7 +301,8 @@ func BenchmarkAPIAsMultiUser(
 		Avg_time_to_complete_api_in_sec:                  (float64(avg_time_to_complete_api) / float64(total_number_of_request)) / 1000,
 		Average_request_payload_size_in_all_iteration:    avg_request_payload_size / float64(number_of_iteration),
 		Average_response_payload_size_in_all_iteration:   avg_response_payload_size / float64(number_of_iteration),
-		Total_time_to_complete_all_apis_iteration_in_sec: float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
+		Total_time_to_complete_all_apis_iteration_in_sec: float64(total_time_to_complete_api) / 1000.0,
+		Total_operation_time_in_sec:                      float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
 	}
 	result := make(map[string]interface{})
 	result[_url] = map[string]interface{}{

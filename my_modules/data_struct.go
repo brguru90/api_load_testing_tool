@@ -28,8 +28,8 @@ type BenchmarkData struct {
 	Total_time_to_complete_all_apis int64                     `json:"Total_time_to_complete_all_apis_in_millesec,omitempty"`
 	Benchmark_per_second_metric     []BenchMarkPerSecondCount `json:"Benchmark_per_second_metric,omitempty"`
 	// it may not accurate because its not the size of whole raw request
-	Average_request_payload_size    float64                   `json:"Average_request_payload_size_in_bytes,omitempty"`
-	Average_response_payload_size   float64                   `json:"Average_response_payload_size_in_bytes,omitempty"`
+	Average_request_payload_size  float64 `json:"Average_request_payload_size_in_bytes,omitempty"`
+	Average_response_payload_size float64 `json:"Average_response_payload_size_in_bytes,omitempty"`
 
 	Avg_time_to_connect_api_in_sec                   float64 `json:"Avg_time_to_connect_api_in_sec,omitempty"`
 	Avg_time_to_complete_api_in_sec                  float64 `json:"Avg_time_to_complete_api_in_sec,omitempty"`
@@ -38,6 +38,7 @@ type BenchmarkData struct {
 	Total_time_to_complete_all_apis_iteration_in_sec float64 `json:"Total_time_to_complete_all_apis_iteration_in_sec,omitempty"`
 	Average_request_payload_size_in_all_iteration    float64 `json:"Average_request_payload_size_in_bytes_in_all_iteration,omitempty"`
 	Average_response_payload_size_in_all_iteration   float64 `json:"Average_response_payload_size_in_bytes_in_all_iteration,omitempty"`
+	Total_operation_time_in_sec                      float64 `json:"Total_operation_time_in_sec,omitempty"`
 }
 
 type AdditionalAPIDetails struct {
