@@ -19,10 +19,10 @@ func RunServer() {
 	// all_router = gin.New()
 	all_router = gin.Default()
 	all_router.Use(cors.Default())
-	all_router.Use(static.Serve("/", static.LocalFile("./src/static", true)))
+	all_router.Use(static.Serve("/", static.LocalFile("./server/metrics_gui/build", true)))
 
 	{
-		ws_router := all_router.Group("/ws")
+		ws_router := all_router.Group("/go_ws")
 		ws.InitWS(ws_router)
 	}
 

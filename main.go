@@ -14,6 +14,7 @@ func main() {
 	go func() {
 		tests.TestAsSingleUser()
 		tests.TestAsMultiUser()
+		close(my_modules.BenchmarkMetricStream)
 	}()
 	server.RunServer()
 }

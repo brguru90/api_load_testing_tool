@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"github.com/google/uuid"
 )
 
-var BenchmarkMetricStream = make(chan map[string]interface{})
+var BenchmarkMetricStream = make(chan map[string]interface{},1000)
 var BenchmarkMetricArray []map[string]interface{} = []map[string]interface{}{}
 
 func pushBenchMarkMetrics(data map[string]interface{}) {
@@ -43,6 +44,7 @@ func BenchmarkAPIAsMultiUser(
 	// later metrics from all client will be sent back to benchmark server
 	// & should also support as standalone benchmark tool when no runner configured/connected
 	// connection should be established from runner client in private network to single publicly hosted server
+	process_uuid:=uuid.New().String()
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
@@ -240,6 +242,8 @@ func BenchmarkAPIAsMultiUser(
 		result := make(map[string]interface{})
 		result[_url] = map[string]interface{}{
 			"iteration_data": temp_data,
+			"iteration":i,
+			"process_uid":process_uuid,
 		}
 		pushBenchMarkMetrics(result)
 		each_iterations_data = append(each_iterations_data, temp_data)
@@ -293,6 +297,7 @@ func BenchmarkAPIAsMultiUser(
 	result := make(map[string]interface{})
 	result[_url] = map[string]interface{}{
 		"all_data": &temp_data,
+		"process_uid":process_uuid,
 	}
 	pushBenchMarkMetrics(result)
 	return &each_iterations_data, &temp_data
