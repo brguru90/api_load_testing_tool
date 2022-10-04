@@ -31,8 +31,10 @@ func TestInvalidateCache() interface{} {
 
 	fmt.Println("bench mark on api finished")
 
-	return map[string]interface{}{
+	result := make(map[string]interface{})
+	result[_url]=map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}
+	return result
 }

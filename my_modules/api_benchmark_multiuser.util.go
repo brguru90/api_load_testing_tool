@@ -7,6 +7,20 @@ import (
 	"sync"
 	"time"
 )
+
+var BenchmarkMetricStream = make(chan map[string]interface{})
+var BenchmarkMetricArray []map[string]interface{} = []map[string]interface{}{}
+
+func pushBenchMarkMetrics(data map[string]interface{}) {
+	select {
+	case BenchmarkMetricStream <- data:
+	default:
+	}
+
+	BenchmarkMetricArray = append(BenchmarkMetricArray, data)
+	fmt.Printf("\n..%d-%d...\n", len(BenchmarkMetricStream), len(BenchmarkMetricArray))
+}
+
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
 // have the callback to generate payload, intercept request & response
@@ -41,12 +55,12 @@ func BenchmarkAPIAsMultiUser(
 		panic("(total_number_of_request % concurrent_request)!=0")
 	}
 
-	var concurrent_req_wg,rh_concurrent_req_wg sync.WaitGroup
-	var iteration_wg,rh_iteration_wg sync.WaitGroup
+	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
+	var iteration_wg, rh_iteration_wg sync.WaitGroup
 
 	var i, j, avg_time_to_complete_api, avg_time_to_connect_api int64
 
-	requests_ahead:= make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request) 
+	requests_ahead := make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request)
 
 	for i = 0; i < number_of_iteration; i++ {
 		rh_iteration_wg.Add(1)
@@ -64,7 +78,7 @@ func BenchmarkAPIAsMultiUser(
 					}
 					requests_ahead <- CreateAPIRequest(_url, method, headers, api_payload, sub_iteration, request_interceptor)
 					// fmt.Printf("requests_ahead %d->%d<%d\n",(main_iteration * concurrent_request) + j,len(requests_ahead),number_of_iteration*concurrent_request)
-				}((main_iteration * concurrent_request) + j)				
+				}((main_iteration * concurrent_request) + j)
 			}
 			rh_concurrent_req_wg.Wait()
 
@@ -75,11 +89,9 @@ func BenchmarkAPIAsMultiUser(
 	close(requests_ahead)
 
 	var request_ahead_array []CreatedAPIRequestFormat
-	for request_ahead :=range requests_ahead{
+	for request_ahead := range requests_ahead {
 		request_ahead_array = append(request_ahead_array, request_ahead)
 	}
-
-
 
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
@@ -103,7 +115,7 @@ func BenchmarkAPIAsMultiUser(
 				// fmt.Printf("%v-%v\n", i, j)
 				go func(sub_iteration int64) {
 					defer concurrent_req_wg.Done()
-					
+
 					data, time_to_complete_api, res, err := APIReq(request_ahead_array[sub_iteration], response_interceptor, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
@@ -211,7 +223,7 @@ func BenchmarkAPIAsMultiUser(
 			}
 		}
 
-		each_iterations_data = append(each_iterations_data, BenchmarkData{
+		temp_data := BenchmarkData{
 			Url:                             _url,
 			Status_code_in_percentage:       status_code_in_percentage,
 			Status_codes:                    status_codes,
@@ -224,7 +236,13 @@ func BenchmarkAPIAsMultiUser(
 			Average_response_payload_size:   avg_response_payload_size,
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
 			Benchmark_per_second_metric:     per_second_metrics,
-		})
+		}
+		result := make(map[string]interface{})
+		result[_url] = map[string]interface{}{
+			"iteration_data": temp_data,
+		}
+		pushBenchMarkMetrics(result)
+		each_iterations_data = append(each_iterations_data, temp_data)
 
 	}
 	iterations_end_time := time.Now()
@@ -258,7 +276,7 @@ func BenchmarkAPIAsMultiUser(
 		status_codes_in_perc[status_code] = (float64(occurrence) / float64(total_number_of_request)) * 100.0
 	}
 
-	return &each_iterations_data, &BenchmarkData{
+	temp_data := BenchmarkData{
 		Url:                                              _url,
 		Status_codes:                                     status_codes,
 		Status_code_in_percentage:                        status_codes_in_perc,
@@ -272,4 +290,10 @@ func BenchmarkAPIAsMultiUser(
 		Average_response_payload_size_in_all_iteration:   avg_response_payload_size / float64(number_of_iteration),
 		Total_time_to_complete_all_apis_iteration_in_sec: float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
 	}
+	result := make(map[string]interface{})
+	result[_url] = map[string]interface{}{
+		"all_data": &temp_data,
+	}
+	pushBenchMarkMetrics(result)
+	return &each_iterations_data, &temp_data
 }

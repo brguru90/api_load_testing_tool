@@ -11,7 +11,7 @@ type RequestSideSession struct {
 }
 
 var req_sessions []RequestSideSession = []RequestSideSession{}
-var req_sessions_q = make(chan RequestSideSession)
+var req_sessions_q = make(chan RequestSideSession,1000000)
 var watching_req_sessions_q = false
 
 func RequestSideSession_AppendFromQ() {

@@ -29,8 +29,10 @@ func GetUserDetailAsMultiUser(_url string, total_req int64, concurrent_req int64
 
 	fmt.Println("bench mark on api finished")
 
-	return map[string]interface{}{
+	result := make(map[string]interface{})
+	result[_url]=map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}
+	return result
 }

@@ -123,8 +123,10 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	fmt.Printf("total collected cookies %d\n", store.GetSessionsCount())
 	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
-	return map[string]interface{}{
+	result := make(map[string]interface{})
+	result[_url]=map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}
+	return result
 }

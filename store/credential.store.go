@@ -10,7 +10,7 @@ type LoginCredential struct {
 }
 
 var login_credential []LoginCredential = []LoginCredential{}
-var login_credential_q = make(chan LoginCredential)
+var login_credential_q = make(chan LoginCredential,1000000)
 var watching_login_credential_q = false
 
 func LoginCredential_AppendFromQ() {
