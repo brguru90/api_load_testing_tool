@@ -9,8 +9,7 @@ export default function Page1() {
 
 
     let client=null
-    const connect = async () => {        
-        await fetch("/go_ws/")
+    const connect = async () => {     
 
         let loc = window.location,
             ws_url

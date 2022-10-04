@@ -1,25 +1,33 @@
 package my_modules
 
 import (
+	"apis_load_test/store"
 	"fmt"
 	"math"
 	"net/http"
 	"sync"
 	"time"
+
 	"github.com/google/uuid"
 )
 
-var BenchmarkMetricStream = make(chan map[string]interface{},1000)
-var BenchmarkMetricArray []map[string]interface{} = []map[string]interface{}{}
+type BenchmarkMetricStreamInfo struct {
+	UpdatedAt int64
+	Data      map[string]interface{}
+}
+
+var BenchmarkMetricStream = make(chan BenchmarkMetricStreamInfo, 1000)
 
 func pushBenchMarkMetrics(data map[string]interface{}) {
+	t := time.Now().UnixMilli()
 	select {
-	case BenchmarkMetricStream <- data:
+	case BenchmarkMetricStream <- BenchmarkMetricStreamInfo{
+		Data:      data,
+		UpdatedAt: t,
+	}:
 	default:
 	}
-
-	BenchmarkMetricArray = append(BenchmarkMetricArray, data)
-	fmt.Printf("\n..%d-%d...\n", len(BenchmarkMetricStream), len(BenchmarkMetricArray))
+	store.GeneralStore_Append(data, t)
 }
 
 // run the http request concurrently with set of iteration
@@ -44,7 +52,7 @@ func BenchmarkAPIAsMultiUser(
 	// later metrics from all client will be sent back to benchmark server
 	// & should also support as standalone benchmark tool when no runner configured/connected
 	// connection should be established from runner client in private network to single publicly hosted server
-	process_uuid:=uuid.New().String()
+	process_uuid := uuid.New().String()
 
 	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
@@ -242,8 +250,8 @@ func BenchmarkAPIAsMultiUser(
 		result := make(map[string]interface{})
 		result[_url] = map[string]interface{}{
 			"iteration_data": temp_data,
-			"iteration":i,
-			"process_uid":process_uuid,
+			"iteration":      i,
+			"process_uid":    process_uuid,
 		}
 		pushBenchMarkMetrics(result)
 		each_iterations_data = append(each_iterations_data, temp_data)
@@ -296,8 +304,8 @@ func BenchmarkAPIAsMultiUser(
 	}
 	result := make(map[string]interface{})
 	result[_url] = map[string]interface{}{
-		"all_data": &temp_data,
-		"process_uid":process_uuid,
+		"all_data":    &temp_data,
+		"process_uid": process_uuid,
 	}
 	pushBenchMarkMetrics(result)
 	return &each_iterations_data, &temp_data
