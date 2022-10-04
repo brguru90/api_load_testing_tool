@@ -30,13 +30,13 @@ type APIData struct {
 	context_data ContextData
 }
 
-type CreatedAPIRequestFormat struct{
-	req *http.Request
+type CreatedAPIRequestFormat struct {
+	req          *http.Request
 	request_size int
-	err error
-	payload map[string]interface{}
-	url string
-	uid int64
+	err          error
+	payload      map[string]interface{}
+	url          string
+	uid          int64
 }
 
 func RandomBytes(size int) (blk []byte, err error) {
@@ -70,12 +70,11 @@ func CreateAPIRequest(
 	payload_obj map[string]interface{},
 	uid int64,
 	request_interceptor func(req *http.Request, uid int64),
-) (CreatedAPIRequestFormat)  {
+) CreatedAPIRequestFormat {
 
 	method = strings.ToUpper(method)
 
 	payload, err := JSONMarshal(payload_obj)
-	
 
 	var req *http.Request
 	switch method {
@@ -88,12 +87,12 @@ func CreateAPIRequest(
 	}
 	if err != nil {
 		return CreatedAPIRequestFormat{
-			req: nil,
+			req:          nil,
 			request_size: -1,
-			err: err,
-			payload: payload_obj,
-			url: _url,
-			uid: uid,
+			err:          err,
+			payload:      payload_obj,
+			url:          _url,
+			uid:          uid,
 		}
 	}
 
@@ -109,34 +108,32 @@ func CreateAPIRequest(
 	var request_size int = 0
 
 	reqDump, err := httputil.DumpRequestOut(req, true)
-    if err == nil {
-        request_size=len(reqDump)
-    }
+	if err == nil {
+		request_size = len(reqDump)
+	}
 
 	return CreatedAPIRequestFormat{
-		req: req,
+		req:          req,
 		request_size: request_size,
-		err: nil,
-		payload: payload_obj,
-		url: _url,
-		uid: uid,
+		err:          nil,
+		payload:      payload_obj,
+		url:          _url,
+		uid:          uid,
 	}
-	
+
 }
 
-
-// make http request 
+// make http request
 // get the metrics like delay, payload size etc for particular request
 func APIReq(
 	api_request CreatedAPIRequestFormat,
 	response_interceptor func(resp *http.Response, uid int64),
 	additional_detail_chan chan AdditionalAPIDetails,
 ) (APIData, int64, *http.Response, error) {
-	uid:=api_request.uid
+	uid := api_request.uid
 	additional_detail := AdditionalAPIDetails{
 		request_id: uid,
 	}
-
 
 	if api_request.err != nil {
 		return APIData{
@@ -148,7 +145,6 @@ func APIReq(
 			},
 		}, 0, nil, api_request.err
 	}
-	
 
 	start_time := time.Now()
 	var connected_time time.Time = start_time
@@ -191,17 +187,17 @@ func APIReq(
 	// response_header_string:=""
 	// if req.Header!=nil{
 	// 	for key,value :=range resp.Header{
-	// 		response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))			
+	// 		response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))
 	// 	}
 	// }
 	// response_size+=len([]byte(response_header_string))
 
 	respDump, err := httputil.DumpResponse(resp, true)
-    if err == nil {
-        response_size=len(respDump)
-    }
+	if err == nil {
+		response_size = len(respDump)
+	}
 
-	additional_detail.response_payload_size=response_size
+	additional_detail.response_payload_size = response_size
 
 	if additional_detail_chan != nil {
 		additional_detail_chan <- additional_detail

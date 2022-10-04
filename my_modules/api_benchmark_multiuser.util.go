@@ -16,17 +16,14 @@ type BenchmarkMetricStreamInfo struct {
 	Data      map[string]interface{}
 }
 
-var BenchmarkMetricStream = make(chan BenchmarkMetricStreamInfo, 1000)
+var BenchmarkMetricEvent = NewCustomEvent("benchmark_event")
 
 func pushBenchMarkMetrics(data map[string]interface{}) {
 	t := time.Now().UnixMilli()
-	select {
-	case BenchmarkMetricStream <- BenchmarkMetricStreamInfo{
+	BenchmarkMetricEvent.Emit(BenchmarkMetricStreamInfo{
 		Data:      data,
 		UpdatedAt: t,
-	}:
-	default:
-	}
+	})
 	store.GeneralStore_Append(data, t)
 }
 
@@ -311,4 +308,8 @@ func BenchmarkAPIAsMultiUser(
 	}
 	pushBenchMarkMetrics(result)
 	return &each_iterations_data, &temp_data
+}
+
+func OnBenchmarkEnd() {
+	BenchmarkMetricEvent.Dispose()
 }

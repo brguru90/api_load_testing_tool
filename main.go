@@ -3,9 +3,8 @@ package main
 import (
 	"apis_load_test/my_modules"
 	"apis_load_test/server"
-	"time"
-
 	"apis_load_test/tests"
+	"time"
 )
 
 func main() {
@@ -14,7 +13,7 @@ func main() {
 	go func() {
 		tests.TestAsSingleUser()
 		tests.TestAsMultiUser()
-		close(my_modules.BenchmarkMetricStream)
+		my_modules.OnBenchmarkEnd()
 	}()
 	server.RunServer()
 }
