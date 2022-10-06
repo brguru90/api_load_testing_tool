@@ -51,11 +51,6 @@ export default function TimeToComplete({ index }) {
         // })
     }, [_iteration_data?.length])
 
-
-
-
-
-
     const effectCalled = useRef(false)
     useEffect(() => {
         if (!effectCalled.current) {

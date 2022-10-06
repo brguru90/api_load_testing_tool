@@ -71,11 +71,11 @@
     }
   },
   "lint-staged": {
-    "src/**/*.+(js|jsx)": [
+    "benchmark/server/metrics_gui/src/**/*.+(js|jsx)": [
       "eslint --fix",
       "git add"
     ],
-    "src/**/*.+(json|css|md)": [
+    "benchmark/server/metrics_gui/src/**/*.+(json|css|md)": [
       "prettier --write",
       "git add"
     ]
