@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import styles from "./style.module.scss"
 import TimeToComplete from "./time_to_complete"
-
+import APIPerSecondMetrics from './each_iteration_in_detail'
 
 export default function APIMetrics({ index }) {
     useEffect(() => {
@@ -32,6 +32,7 @@ export default function APIMetrics({ index }) {
                     pi charts
                 </div>
             </div>
+            <APIPerSecondMetrics index={index} />
         </fieldset>
     )
 }
