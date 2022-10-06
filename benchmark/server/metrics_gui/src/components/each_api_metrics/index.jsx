@@ -14,7 +14,6 @@ export default function APIMetrics({ index }) {
         return [url || "no url",process_id || "no process_id"]
     },()=>index!=undefined)
 
-
     return (
         <fieldset className={styles['api_metrics']}>
             <legend className={styles['api_metrics_legened']}>{url} - {process_id}</legend>
