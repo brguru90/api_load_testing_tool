@@ -73,7 +73,6 @@
   "lint-staged": {
     "src/**/*.+(js|jsx)": [
       "eslint --fix",
-      "npm run format",
       "git add"
     ],
     "src/**/*.+(json|css|md)": [
