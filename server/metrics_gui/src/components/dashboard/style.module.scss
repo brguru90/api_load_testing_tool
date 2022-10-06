@@ -1,0 +1,16 @@
+.dashbaord {
+
+    width: 100%;
+    background-color: #e7eaf6;
+
+    .test_cases {
+        margin: 30px;
+        display: flex;
+        flex-direction: column;
+
+        .test_case {            
+            margin-top: 30px;
+        }
+    }
+
+}

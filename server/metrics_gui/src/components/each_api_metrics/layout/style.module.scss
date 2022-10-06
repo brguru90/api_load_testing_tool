@@ -1,0 +1,31 @@
+.api_metrics{
+
+    border:solid black 1px;
+    background-color: rgb(244, 246, 248);    
+    border-radius: 5px;
+
+    .api_metrics_legened{
+        width: max-content;
+        margin-left: 10px;
+        padding: 0px 10px;
+    }
+
+    .overall_api_metrics {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+
+        .overall_api_metric {
+            flex-basis: calc(50% - 40px);
+            background-color: white;
+            box-shadow: 10px 10px 38px -21px rgba(0,0,0,0.78);
+            min-height: 400px;
+            margin-top: 40px;
+            &:nth-last-of-type(1),&:nth-last-of-type(2){
+                margin-bottom: 40px;
+            }
+            
+        }
+    }
+}
