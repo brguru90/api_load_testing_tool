@@ -38,7 +38,7 @@ func Metrics(c *gin.Context) {
 			t2 := func(data interface{}) {
 				_stream := data.(my_modules.BenchmarkMetricStreamInfo)
 				if _stream.UpdatedAt > _info.UpdatedAt {
-					result, err := json.MarshalIndent([]map[string]interface{}{_stream.Data}, "", "  ")
+					result, err := json.MarshalIndent([]interface{}{_stream.Data}, "", "  ")
 					if err == nil {
 						M.Broadcast([]byte(result))
 					}

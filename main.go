@@ -11,6 +11,7 @@ func main() {
 	my_modules.HTTPTimeout = time.Minute * 1
 	my_modules.LogPath = "./log.json"
 	go func() {
+		my_modules.InitBeforeBenchMarkStart()
 		tests.TestAsSingleUser()
 		tests.TestAsMultiUser()
 		my_modules.OnBenchmarkEnd()

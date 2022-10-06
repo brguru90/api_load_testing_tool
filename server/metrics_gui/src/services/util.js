@@ -29,8 +29,8 @@ class ManageWebSocket {
         }
 
         this.client.onmessage = function (event) {
-            console.log(`[message] Data received from server: ${event.data}`)
-            callback()
+            // console.log(`[message] Data received from server: ${event.data}`)
+            callback(event.data)
         }
 
         this.client.onclose = function (event) {

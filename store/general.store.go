@@ -4,27 +4,35 @@ import (
 	"time"
 )
 
-type GeneralStore map[string]interface{}
 type GeneralStoreInfo struct {
 	UpdatedAt int64
-	Other     GeneralStore
+	Other     interface{}
 }
 
-var general_store []GeneralStore = []GeneralStore{}
+var general_store []interface{} = []interface{}{}
 var general_store_info GeneralStoreInfo = GeneralStoreInfo{}
-var general_store_q = make(chan GeneralStore, 1000000)
+var general_store_q = make(chan interface{}, 1000000)
 var watching_general_store_q = false
+var general_store_callback *func([]interface{},interface{}) []interface{}=nil
+
+func GeneralStore_ManualAppendFromQ(callback *func([]interface{},interface{}) []interface{}) {
+	general_store_callback=callback
+}
 
 func GeneralStore_AppendFromQ() {
 	watching_general_store_q = true
 	go func() {
 		for lc := range general_store_q {
-			general_store = append(general_store, lc)
+			if general_store_callback!=nil{
+				general_store=(*general_store_callback)(general_store,lc)
+			} else{
+				general_store = append(general_store, lc)
+			}
 		}
 	}()
 }
 
-func GeneralStore_Append(lc GeneralStore, updated_at int64) {
+func GeneralStore_Append(lc interface{}, updated_at int64) {
 	if !watching_general_store_q {
 		GeneralStore_AppendFromQ()
 	}
@@ -36,22 +44,22 @@ func GeneralStore_Append(lc GeneralStore, updated_at int64) {
 	}
 }
 
-func GeneralStore_Reset(lc GeneralStore) {
-	general_store = []GeneralStore{}
+func GeneralStore_Reset(lc interface{}) {
+	general_store = []interface{}{}
 }
 
 func GeneralStore_GetInfo() GeneralStoreInfo {
 	return general_store_info
 }
 
-func GeneralStore_Get(index int64) GeneralStore {
+func GeneralStore_Get(index int64) interface{} {
 	return general_store[index]
 }
-func GeneralStore_GetAll() *[]GeneralStore {
+func GeneralStore_GetAll() *[]interface{} {
 	return &general_store
 }
 
-func GeneralStore_GetAllWithInfo() (*[]GeneralStore, *GeneralStoreInfo) {
+func GeneralStore_GetAllWithInfo() (*[]interface{}, *GeneralStoreInfo) {
 	return &general_store, &general_store_info
 }
 
