@@ -27,7 +27,7 @@ const chart_option={
         toolbar: {
             show: true,
             offsetX: -65,
-            offsetY: -15,
+            offsetY: 0,
             tools: {
                 download: true,
                 pan: true,
