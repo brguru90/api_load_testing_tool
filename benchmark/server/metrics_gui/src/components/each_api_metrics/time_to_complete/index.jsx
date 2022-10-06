@@ -15,7 +15,6 @@ export default function TimeToComplete({ index }) {
         return []
     })
 
-
     const structure_data = (dt) => {
         return [
             {
