@@ -7,6 +7,12 @@ import { useDispatch, useSelector } from "react-redux"
 
 export default function Dashboard() {
     const test_cases_len = useSelector(state => state.metrics_data?.length || 0)
+    
+    useEffect(() => {
+      console.log("Rendered: Dashboard")
+    })
+    
+
     return (
         <div className={styles["dashbaord"]}>
             <div className={styles["test_cases"]}>

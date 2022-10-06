@@ -4,6 +4,9 @@ import TimeToComplete from "../time_to_complete"
 
 
 export default function APIMetrics({ index }) {
+    useEffect(() => {
+        console.log("APIMetrics: Dashboard")
+    })
     return (
         <fieldset className={styles['api_metrics']}>
             <legend className={styles['api_metrics_legened']}>API URL-{index}...</legend>
