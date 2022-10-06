@@ -1,6 +1,6 @@
 import React from 'react'
 import styles from "./style.module.scss"
-import TimeToComplete from "../each_api_benchmark_summary/time_to_complete"
+import TimeToComplete from "../time_to_complete"
 
 
 export default function APIMetrics({ index }) {
