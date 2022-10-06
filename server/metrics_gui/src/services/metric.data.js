@@ -5,15 +5,8 @@ const GetBenchmarkMetrics = (callback) => {
     const manageWebSocket = new ManageWebSocket("/metrics/")
     let existing_data = []
     manageWebSocket.connect((raw_data) => {
-        // console.log("raw_data", raw_data,typeof(raw_data))
-        // need to refine data in different categories
-        // need to set ata in redux, so it can be accessed directly in chart component
-        // since data will e updated on redux, no need of callback
-
-        // callback(data)
-
         raw_data = JSON.parse(raw_data)
-        console.log("raw_data", raw_data)
+        // console.log("raw_data", raw_data)
 
         if (raw_data && Array.isArray(raw_data)) {
             let new_benchmark = true
@@ -24,7 +17,7 @@ const GetBenchmarkMetrics = (callback) => {
                         raw_elem.process_uid == elem.process_uid
                     ) {
                         if (raw_elem.iteration_data) {
-                            elem.iteration_data.push(raw_elem.iteration_data)
+                            elem.iteration_data=[...elem.iteration_data,...raw_elem.iteration_data]
                         }
                         if (raw_elem.all_data?.Url) {
                             elem.all_data = raw_elem.all_data
@@ -39,6 +32,7 @@ const GetBenchmarkMetrics = (callback) => {
         }
 
         console.log("existing_data", existing_data)
+        callback(existing_data)
     })
 }
 

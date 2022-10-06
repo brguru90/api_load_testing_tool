@@ -251,6 +251,7 @@ func BenchmarkAPIAsMultiUser(
 			Average_response_payload_size:   avg_response_payload_size,
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
 			Benchmark_per_second_metric:     per_second_metrics,
+			IterationID: i,
 		}
 		result := BenchmarkMetricStruct{
 			Url: temp_data.Url,
@@ -307,6 +308,7 @@ func BenchmarkAPIAsMultiUser(
 		Average_response_payload_size_in_all_iteration:   avg_response_payload_size / float64(number_of_iteration),
 		Total_time_to_complete_all_apis_iteration_in_sec: float64(total_time_to_complete_api) / 1000.0,
 		Total_operation_time_in_sec:                      float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
+		IterationID: -1,
 	}
 	result := BenchmarkMetricStruct{
 		Url: temp_data.Url,

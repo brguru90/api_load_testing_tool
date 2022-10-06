@@ -39,6 +39,7 @@ type BenchmarkData struct {
 	Average_request_payload_size_in_all_iteration    float64 `json:"Average_request_payload_size_in_bytes_in_all_iteration,omitempty"`
 	Average_response_payload_size_in_all_iteration   float64 `json:"Average_response_payload_size_in_bytes_in_all_iteration,omitempty"`
 	Total_operation_time_in_sec                      float64 `json:"Total_operation_time_in_sec,omitempty"`
+	IterationID int64 `json:"iteration_id"`
 }
 
 type AdditionalAPIDetails struct {
