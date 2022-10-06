@@ -31,7 +31,7 @@ const GetBenchmarkMetrics = (callback) => {
             }
         }
 
-        console.log("existing_data", existing_data)
+        console.log("existing_data", JSON.parse(JSON.stringify(existing_data)))
         callback(existing_data)
     })
 }

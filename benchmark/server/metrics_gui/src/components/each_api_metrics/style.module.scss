@@ -17,7 +17,10 @@
         flex-wrap: wrap;
 
         .overall_api_metric {
-            flex-basis: calc(50% - 40px);
+            width: calc(100% - 40px);
+            @media only screen and (min-width: 1400px) {
+                flex-basis: calc(50% - 40px);               
+            }
             background-color: white;
             box-shadow: 10px 10px 38px -21px rgba(0,0,0,0.78);
             min-height: 400px;

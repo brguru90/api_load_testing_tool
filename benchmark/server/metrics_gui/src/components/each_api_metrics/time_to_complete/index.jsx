@@ -1,164 +1,82 @@
-import React, {useEffect, useRef, useState} from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import ReactApexChart from "react-apexcharts"
 import ApexCharts from "apexcharts"
 import "./style.scss"
+import { useSelector } from "react-redux"
+import { chart_option } from "./chart_option"
 
-export default function TimeToComplete() {
-    const effectCalled = useRef(false)
-    const [series, setSeries] = useState([
-        {
-            name: "Request success rate",
-            data: [10, 20, 30, 40],
-        },
-        {
-            name: "Request proccessed per Second",
-            data: [15, 25, 35, 45],
-        },
-    ])
+export default function TimeToComplete({ index }) {
 
-    const chartOption = {
-        chart: {
-            id: "realtime",
-            height: 350,
-            type: "line",
-            dropShadow: {
-                enabled: true,
-                color: "#000",
-                top: 18,
-                left: 7,
-                blur: 10,
-                opacity: 0.2,
-            },
-            animations: {
-                enabled: true,
-                easing: "easeout",
-                speed: 1000,
-                animateGradually: {
-                    enabled: true,
-                    delay: 150,
-                },
-                dynamicAnimation: {
-                    enabled: true,
-                    speed: 800,
-                },
-            },
-            toolbar: {
-                show: true,
-                offsetX: -65,
-                offsetY: -15,
-                tools: {
-                    download: true,
-                    pan: true,
-                    selection: true,
-                    zoom: true,
-                    zoomin: true,
-                    zoomout: true,
-                    reset: true,
-                },
-                autoSelected: "zoom",
-            },
-            zoom: {
-                enabled: true,
-            },
-        },
-        dataLabels: {
-            enabled: true,
-        },
-        stroke: {
-            curve: "straight",
-        },
-        title: {
-            // text: 'Server load balancing',
-            align: "left",
-            margin: 40,
-            offsetX: 0,
-            offsetY: -20,
-            floating: false,
-            style: {
-                fontSize: "16px",
-                fontWeight: "bold",
-                fontFamily: undefined,
-                color: "#263238",
-            },
-        },
-        grid: {
-            borderColor: "#e7e7e7",
-            row: {
-                colors: ["#f3f3f3", "transparent"], // takes an array which will be repeated on columns
-                opacity: 0.5,
-            },
-        },
-        markers: {
-            size: 4,
-            strokeWidth: 0,
-        },
-        xaxis: {
-            type: "category",
-            title: {
-                text: "Request per second (total request is 2000)",
-                style: {
-                    fontSize: "10px",
-                    color: "#78787D",
-                },
-            },
-        },
-        yaxis: {
-            title: {
-                text: "Maximum reach in %",
-                style: {
-                    fontSize: "10px",
-                    color: "#78787D",
-                },
-            },
-            labels: {
-                rotate: -45,
-            },
-        },
+    const _iteration_data = useSelector(state => {
+        const iteration_data = state.metrics_data?.[index]?.iteration_data
+        if (iteration_data?.length) {
+            return iteration_data
+        }
+        return []
+    })
 
-        legend: {
-            position: "top",
-            horizontalAlign: "right",
-            floating: true,
-            offsetY: -25,
-            offsetX: -5,
-        },
+
+    const structure_data = (dt) => {
+        return [
+            {
+                name: "total time to complete",
+                data: dt.map(data => data?.Total_time_to_complete_all_apis_in_millesec),
+            },
+            {
+                name: "average time to complete",
+                data: dt.map(data => data?.Avg_time_to_complete_api_in_millesec),
+            },
+            {
+                name: "average time to connect",
+                data: dt.map(data => data?.Avg_time_to_connect_api_in_millesec),
+            },
+        ]
     }
 
+
+    const [chartData, setChartData] = useState({
+        series:structure_data(_iteration_data),
+        chart_option:chart_option
+    })
+    useMemo(() => {
+        chart_option.xaxis.categories=_iteration_data.map(data => data?.iteration_id+1)
+        setChartData({
+            series:structure_data(_iteration_data),
+            chart_option:chart_option
+        })
+        // setSeries(() => {
+        //     const s = structure_data(_iteration_data)
+        //     ApexCharts.exec("realtime", "updateSeries", s)
+        //     return s
+        // })
+    }, [_iteration_data?.length])
+
+
+
+
+
+
+    const effectCalled = useRef(false)
     useEffect(() => {
         if (!effectCalled.current) {
             effectCalled.current = true
-            let count = 20
-            const interval = setInterval(() => {
-                if (--count < 0) {
-                    clearInterval(interval)
-                }
-                setSeries((series) => {
-                    series[0].data = [...series[0].data, Math.round(Math.random() * 100)]
-                    series[1].data = [...series[1].data, Math.round(Math.random() * 100)]
-                    ApexCharts.exec("realtime", "updateSeries", [
-                        {
-                            name: "Request success rate",
-                            data: series[0].data,
-                        },
-                        {
-                            name: "Request proccessed per Second",
-                            data: series[1].data,
-                        },
-                    ])
-                    return series
-                })
-            }, 1000)
         }
     }, [])
+
+
+    useEffect(() => {
+        console.log(`Rendered: TimeToComplete index=${index}`)
+    })
 
     return (
         <div className="ttc">
             <ReactApexChart
-                options={chartOption}
-                series={series}
+                options={chartData.chart_option}
+                series={chartData.series}
                 type="line"
                 height={600}
-                // width={600}
+                className="benchmark_line_chart"
+            // width={600}
             />
         </div>
     )
