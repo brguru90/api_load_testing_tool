@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import ReactApexChart from "react-apexcharts"
-import ApexCharts from "apexcharts"
+// import ApexCharts from "apexcharts"
 import "./style.scss"
 import { useSelector } from "react-redux"
 import { chart_option } from "./chart_option"
