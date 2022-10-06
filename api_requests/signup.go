@@ -1,8 +1,8 @@
 package api_requests
 
 import (
-	"apis_load_test/my_modules"
-	"apis_load_test/store"
+	"apis_load_test/benchmark/my_modules"
+	"apis_load_test/benchmark/store"
 	"fmt"
 	// "encoding/json"
 )
@@ -46,7 +46,7 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 	store.LoginCredential_WaitForAppend()
 
 	result := make(map[string]interface{})
-	result[_url]=map[string]interface{}{
+	result[_url] = map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}

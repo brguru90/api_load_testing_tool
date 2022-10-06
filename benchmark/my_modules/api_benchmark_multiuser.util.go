@@ -1,7 +1,7 @@
 package my_modules
 
 import (
-	"apis_load_test/store"
+	"apis_load_test/benchmark/store"
 	"fmt"
 	"math"
 	"net/http"
@@ -17,12 +17,11 @@ type BenchmarkMetricStreamInfo struct {
 }
 
 type BenchmarkMetricStruct struct {
-	Url string `json:"url,omitempty"`
-	ProcessUid string `json:"process_uid,omitempty"`
-	AllData      BenchmarkData `json:"all_data,omitempty"`
+	Url           string          `json:"url,omitempty"`
+	ProcessUid    string          `json:"process_uid,omitempty"`
+	AllData       BenchmarkData   `json:"all_data,omitempty"`
 	IterationData []BenchmarkData `json:"iteration_data,omitempty"`
 }
-
 
 var BenchmarkMetricEvent = NewCustomEvent("benchmark_event")
 
@@ -251,12 +250,12 @@ func BenchmarkAPIAsMultiUser(
 			Average_response_payload_size:   avg_response_payload_size,
 			Total_time_to_complete_all_apis: concurrent_req_end_time.Sub(concurrent_req_start_time).Milliseconds(),
 			Benchmark_per_second_metric:     per_second_metrics,
-			IterationID: i,
+			IterationID:                     i,
 		}
 		result := BenchmarkMetricStruct{
-			Url: temp_data.Url,
+			Url:           temp_data.Url,
 			IterationData: []BenchmarkData{temp_data},
-			ProcessUid: process_uuid,
+			ProcessUid:    process_uuid,
 		}
 		pushBenchMarkMetrics(result)
 		each_iterations_data = append(each_iterations_data, temp_data)
@@ -308,13 +307,13 @@ func BenchmarkAPIAsMultiUser(
 		Average_response_payload_size_in_all_iteration:   avg_response_payload_size / float64(number_of_iteration),
 		Total_time_to_complete_all_apis_iteration_in_sec: float64(total_time_to_complete_api) / 1000.0,
 		Total_operation_time_in_sec:                      float64(iterations_end_time.Sub(iterations_start_time).Milliseconds()) / 1000.0,
-		IterationID: -1,
+		IterationID:                                      -1,
 	}
 	result := BenchmarkMetricStruct{
-		Url: temp_data.Url,
-		AllData: temp_data,
+		Url:           temp_data.Url,
+		AllData:       temp_data,
 		IterationData: nil,
-		ProcessUid: process_uuid,
+		ProcessUid:    process_uuid,
 	}
 	pushBenchMarkMetrics(result)
 	return &each_iterations_data, &temp_data
@@ -324,22 +323,22 @@ func OnBenchmarkEnd() {
 	BenchmarkMetricEvent.Dispose()
 }
 
-func InitBeforeBenchMarkStart(){
-	f:=func(data []interface{},cur_data interface{}) []interface{}{
-		_matched:=false
-		for key,dt:=range data{		
-			temp:=dt.(BenchmarkMetricStruct)	
-			if temp.Url==cur_data.(BenchmarkMetricStruct).Url && temp.ProcessUid==cur_data.(BenchmarkMetricStruct).ProcessUid{
-				if cur_data.(BenchmarkMetricStruct).IterationData!=nil{
-					temp.IterationData=append(temp.IterationData, cur_data.(BenchmarkMetricStruct).IterationData...)
-				} else{
-					temp.AllData=cur_data.(BenchmarkMetricStruct).AllData
+func InitBeforeBenchMarkStart() {
+	f := func(data []interface{}, cur_data interface{}) []interface{} {
+		_matched := false
+		for key, dt := range data {
+			temp := dt.(BenchmarkMetricStruct)
+			if temp.Url == cur_data.(BenchmarkMetricStruct).Url && temp.ProcessUid == cur_data.(BenchmarkMetricStruct).ProcessUid {
+				if cur_data.(BenchmarkMetricStruct).IterationData != nil {
+					temp.IterationData = append(temp.IterationData, cur_data.(BenchmarkMetricStruct).IterationData...)
+				} else {
+					temp.AllData = cur_data.(BenchmarkMetricStruct).AllData
 				}
-				data[key]=temp
-				_matched=true
+				data[key] = temp
+				_matched = true
 			}
 		}
-		if !_matched{
+		if !_matched {
 			data = append(data, cur_data)
 		}
 		return data

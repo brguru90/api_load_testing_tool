@@ -1,12 +1,10 @@
 package api_requests
 
 import (
-	"apis_load_test/my_modules"
+	"apis_load_test/benchmark/my_modules"
 	"fmt"
 	"net/http"
 )
-
-
 
 func TestInvalidateCache() interface{} {
 	var total_req int64 = 10
@@ -17,10 +15,9 @@ func TestInvalidateCache() interface{} {
 		"Content-Type": "application/json",
 	}
 
-
 	request_interceptor := func(req *http.Request, uid int64) {
 		fmt.Printf("request interceptor uid--> %v\n", uid)
-		req.Header.Add("secret","1234")
+		req.Header.Add("secret", "1234")
 	}
 
 	response_interceptor := func(resp *http.Response, uid int64) {
@@ -32,7 +29,7 @@ func TestInvalidateCache() interface{} {
 	fmt.Println("bench mark on api finished")
 
 	result := make(map[string]interface{})
-	result[_url]=map[string]interface{}{
+	result[_url] = map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}

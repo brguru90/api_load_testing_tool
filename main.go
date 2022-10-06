@@ -1,8 +1,8 @@
 package main
 
 import (
-	"apis_load_test/my_modules"
-	"apis_load_test/server"
+	"apis_load_test/benchmark"
+	"apis_load_test/benchmark/my_modules"
 	"apis_load_test/tests"
 	"time"
 )
@@ -10,11 +10,8 @@ import (
 func main() {
 	my_modules.HTTPTimeout = time.Minute * 1
 	my_modules.LogPath = "./log.json"
-	go func() {
-		my_modules.InitBeforeBenchMarkStart()
+	benchmark.RunBenchmark(func() {
 		tests.TestAsSingleUser()
 		tests.TestAsMultiUser()
-		my_modules.OnBenchmarkEnd()
-	}()
-	server.RunServer()
+	})
 }

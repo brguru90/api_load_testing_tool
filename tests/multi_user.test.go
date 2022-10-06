@@ -3,7 +3,7 @@ package tests
 import (
 	"apis_load_test/api_requests"
 	"apis_load_test/api_requests/user"
-	"apis_load_test/my_modules"
+	"apis_load_test/benchmark/my_modules"
 	"fmt"
 )
 

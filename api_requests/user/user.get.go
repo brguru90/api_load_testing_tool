@@ -1,8 +1,8 @@
 package user
 
 import (
-	"apis_load_test/my_modules"
-	"apis_load_test/store"
+	"apis_load_test/benchmark/my_modules"
+	"apis_load_test/benchmark/store"
 	"fmt"
 	"net/http"
 )
@@ -30,7 +30,7 @@ func GetUserDetailAsMultiUser(_url string, total_req int64, concurrent_req int64
 	fmt.Println("bench mark on api finished")
 
 	result := make(map[string]interface{})
-	result[_url]=map[string]interface{}{
+	result[_url] = map[string]interface{}{
 		"iteration_data": iteration_data,
 		"all_data":       all_data,
 	}

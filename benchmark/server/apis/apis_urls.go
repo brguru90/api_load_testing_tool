@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"apis_load_test/server/apis/views"
+	"apis_load_test/benchmark/server/apis/views"
 
 	"github.com/gin-gonic/gin"
 )

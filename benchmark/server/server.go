@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"apis_load_test/server/apis"
-	"apis_load_test/server/ws"
+	"apis_load_test/benchmark/server/apis"
+	"apis_load_test/benchmark/server/ws"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"

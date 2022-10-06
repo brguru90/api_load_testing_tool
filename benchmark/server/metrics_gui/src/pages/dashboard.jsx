@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from "react"
 import {Link} from "react-router-dom"
-import Dashboard from "../components/dashboard"
+import Dashboard from "../components/dashboard/index.jsx"
 import {useDispatch, useSelector} from "react-redux"
 import {GetBenchmarkMetrics} from "../services/metric.data"
 GetBenchmarkMetrics
