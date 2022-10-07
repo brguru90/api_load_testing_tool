@@ -1,33 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-import { Chart, Line } from 'react-chartjs-2';
-
+import ReactApexChart from "react-apexcharts"
+import ApexCharts from "apexcharts"
 import "./style.scss"
 import { useSelector } from "react-redux"
 import { chart_option } from "./chart_option"
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-);
+import ChartScrollbar from "../../../common_components/chart_scrollbar/index.jsx"
 
 export default function TimeToComplete({ index }) {
 
-    const chartRef = useRef(null);
     const _iteration_data = useSelector(state => {
         const iteration_data = state.metrics_data?.[index]?.iteration_data
         if (iteration_data?.length) {
@@ -36,54 +16,47 @@ export default function TimeToComplete({ index }) {
         return []
     })
 
-
-
     const structure_data = (dt) => {
-        return {
-            labels: dt.map(data => data?.iteration_id + 1),
-            datasets: [
-                {
-                    label: 'total time to complete',
-                    data: dt.map(data => data?.Total_time_to_complete_all_apis_in_millesec),
-                    borderColor: 'rgb(53, 162, 235)',
-                    backgroundColor: 'rgba(53, 162, 235, 0.5)',
-                    yAxisID: 'y',
-                },
-                {
-                    label: 'average time to complete',
-                    data: dt.map(data => data?.Avg_time_to_complete_api_in_millesec),
-                    borderColor: 'rgb(8, 201, 18)',
-                    backgroundColor: 'rgba(8, 201, 18, 0.5)',
-                    yAxisID: 'y',
-                },
-                {
-                    label: 'average time to connect',
-                    data: dt.map(data => data?.Avg_time_to_connect_api_in_millesec),
-                    borderColor: 'rgb(245, 186, 37)',
-                    backgroundColor: 'rgba(245, 186, 37, 0.5)',
-                    yAxisID: 'y',
-                },
-            ],
-        };
+        return [
+            {
+                name: "total time to complete",
+                data: dt.map(data => data?.Total_time_to_complete_all_apis_in_millesec),
+            },
+            {
+                name: "average time to complete",
+                data: dt.map(data => data?.Avg_time_to_complete_api_in_millesec),
+            },
+            {
+                name: "average time to connect",
+                data: dt.map(data => data?.Avg_time_to_connect_api_in_millesec),
+            },
+        ]
     }
 
 
-
-    const [chartData, setChartData] = useState(structure_data(_iteration_data))
+    const max_items=8
+    const [pagination, set_pagination] = useState(0)
+    let start_index=pagination*max_items;
+    const [chartData, setChartData] = useState({
+        series: structure_data(_iteration_data.slice(start_index,start_index+max_items)),
+        chart_option: chart_option
+    })
     useMemo(() => {
-        setChartData(structure_data(_iteration_data))
-        // setSeries(() => {
-        //     const s = structure_data(_iteration_data)
+        start_index=pagination*max_items;
+        chart_option.xaxis.categories = _iteration_data.slice(start_index,start_index+max_items).map(data => data?.iteration_id + 1)
+        setChartData({
+            series: structure_data(_iteration_data.slice(start_index,start_index+max_items)),
+            chart_option: chart_option
+        })
+        // setChartData(() => {
+        //     const s = structure_data(_iteration_data.slice(start_index,start_index+max_items))
         //     ApexCharts.exec("realtime", "updateSeries", s)
-        //     return s
+        //     return {
+        //         series:s,
+        //         chart_option: chart_option
+        //     }
         // })
-    }, [_iteration_data?.length])
-
-    useEffect(() => {
-        chartRef?.current?.update()
-    }, [chartData])
-    
-
+    }, [_iteration_data?.length,pagination])
 
     const effectCalled = useRef(false)
     useEffect(() => {
@@ -97,23 +70,30 @@ export default function TimeToComplete({ index }) {
         console.log(`Rendered: TimeToComplete index=${index}`)
     })
 
+    const onScroll=(e,step)=>{
+        let a=e?.target?.scrollLeft
+        let b = e?.target?.scrollWidth - e?.target?.offsetWidth;
+        // console.log(a/b,step*(a/b))
+        set_pagination(step*(a/b))
+    }
+
     return (
         <div className="ttc">
-            <div className="chart_parent"
-                style={{
-                    height:"400px",
-                    width: `${chartData.labels?.length * 45}px`
-                }}
-            >
-                <Line
-                    options={chart_option}
-                    data={chartData}
-                    height={400}
-                    width={chartData.labels?.length * 45}
-                    className="benchmark_line_chart"
-                    ref={chartRef}
-                />
-            </div>
+            <ReactApexChart
+                options={chartData.chart_option}
+                series={chartData.series}
+                type="line"
+                height={400}
+                // width={chartData?.chart_option?.xaxis?.categories?.length*50}
+                className="benchmark_line_chart"
+            // width={600}
+            />
+            <ChartScrollbar
+                scroll_count={Math.ceil(_iteration_data?.length / max_items)}
+                onScroll={onScroll}
+            />
+
+            {JSON.stringify(chartData.chart_option.xaxis.categories)}
         </div>
     )
 }

@@ -1,0 +1,12 @@
+.chart_scrollbar_parent{
+    width: 100%;
+    overflow-x: auto;
+
+    --scroll-count:0;
+    .chart_scrollbar{
+        background-color: silver;
+        height: 1px;
+        visibility: hidden;
+        width: calc(100% * var(--scroll-count));
+    }
+}
