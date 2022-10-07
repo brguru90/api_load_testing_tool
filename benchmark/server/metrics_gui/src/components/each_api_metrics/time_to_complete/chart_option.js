@@ -1,5 +1,6 @@
 const chart_option={
     chart: {
+        redrawOnParentResize: true,
         id: "realtime",
         height: 350,
         type: "line",
@@ -41,6 +42,7 @@ const chart_option={
         },
         zoom: {
             enabled: true,
+            type: 'x', 
         },
     },
     dataLabels: {
@@ -99,10 +101,10 @@ const chart_option={
 
     legend: {
         position: "top",
-        horizontalAlign: "right",
+        horizontalAlign: "left",
         floating: true,
-        offsetY: -25,
-        offsetX: -5,
+        offsetY: -35,
+        offsetX: -10,
     },
 }
 

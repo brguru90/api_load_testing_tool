@@ -68,7 +68,8 @@ export default function TimeToComplete({ index }) {
                 options={chartData.chart_option}
                 series={chartData.series}
                 type="line"
-                height={600}
+                height={400}
+                width={chartData?.chart_option?.xaxis?.categories?.length*50}
                 className="benchmark_line_chart"
             // width={600}
             />

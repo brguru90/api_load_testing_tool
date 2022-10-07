@@ -8,7 +8,7 @@ export default function APIPerSecondMetrics({index}) {
     return (
         <div className={styles['per_second_metrics']}>
             <h1 className={styles['title']}>API Per Second Metrics</h1>
-            <div className={styles['per_second_metrics_set']}>
+            {/* <div className={styles['per_second_metrics_set']}>
             {
                 iteration_ids.map(id=>{
                     return <div key={id} className={styles['per_second_data']}>
@@ -16,7 +16,7 @@ export default function APIPerSecondMetrics({index}) {
                     </div>
                 })
             }
-            </div>
+            </div> */}
         </div>
     )
 }

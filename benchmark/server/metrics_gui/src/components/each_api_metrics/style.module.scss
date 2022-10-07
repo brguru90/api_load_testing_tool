@@ -17,12 +17,15 @@
         flex-wrap: wrap;
 
         .overall_api_metric {
-            width: calc(100% - 40px);
-            @media only screen and (min-width: 1400px) {
-                flex-basis: calc(50% - 40px);               
+            flex-basis: calc(100% - 40px);
+            max-width: calc(100% - 40px);
+            @media only screen and (min-width: 1200px) {
+                flex-basis: calc(50% - 40px);    
+                max-width: calc(50% - 40px);           
             }
             background-color: white;
             box-shadow: 10px 10px 38px -21px rgba(0,0,0,0.78);
+            outline: solid 1px #dbdddf7d;
             min-height: 400px;
             margin-top: 40px;
             &:nth-last-of-type(1),&:nth-last-of-type(2){

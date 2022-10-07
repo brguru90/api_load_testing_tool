@@ -7,6 +7,7 @@ export default function APITimes() {
         <h1>APITimes</h1>
         <p>Time to send</p>
         <p>Time to connect</p>
+        <p>Time to first byte</p>
         <p>Time to process</p><br />
 
 
