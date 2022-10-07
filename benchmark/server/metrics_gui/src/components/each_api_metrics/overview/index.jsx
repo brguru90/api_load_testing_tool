@@ -4,7 +4,7 @@ import "./style.scss"
 
 export default function APIMetricsOverview({ index, url }) {
 
-  const overview_data = useSelector(state => state.metrics_data?.[index]?.all_data || {}, () => index != undefined)
+  const overview_data = useSelector(state => state.metrics_data?.[index]?.all_data || {})
 
   return (
     <div className='api_metrics_overview'>
@@ -37,7 +37,7 @@ export default function APIMetricsOverview({ index, url }) {
               <th>Average API response time:</th>
               <td>
                 {overview_data?.Avg_time_to_complete_api_in_sec || "-"} Seconds
-                ({Math.round(1 / overview_data?.Avg_time_to_complete_api_in_sec)} Req/Sec)
+                ({Math.round(1 / overview_data?.Avg_time_to_complete_api_in_sec) || "-"} Req/Sec)
               </td>
             </tr>
             <tr>
