@@ -71,23 +71,33 @@ export default function TimeToComplete({ index }) {
 
 
 
-    const max_items=10
+    const [max_items, set_max_items] = useState(10)
     const [pagination, set_pagination] = useState(0)
-    let start_index=pagination*max_items;
-    const [chartData, setChartData] = useState(structure_data(_iteration_data.slice(start_index,start_index+max_items)))
+    let start_index = pagination * max_items;
+    const [chartData, setChartData] = useState(structure_data(_iteration_data.slice(start_index, start_index + max_items)))
     useMemo(() => {
-        start_index=pagination*max_items;
-        setChartData(structure_data(_iteration_data.slice(start_index,start_index+max_items)))
+        start_index = pagination * max_items;
+        setChartData(structure_data(_iteration_data.slice(start_index, start_index + max_items)))
         // setSeries(() => {
         //     const s = structure_data(_iteration_data)
         //     ApexCharts.exec("realtime", "updateSeries", s)
         //     return s
         // })
-    }, [_iteration_data?.length,pagination])
+    }, [_iteration_data?.length, pagination,max_items])
 
-    useEffect(() => {
-        chartRef?.current?.update()
-    }, [chartData])
+
+    const onScroll = (page) => {
+        console.log("page",page)
+        set_pagination(Math.round(page))
+    }
+
+    // useEffect(() => {
+    //     chartRef?.current?.update()
+    // }, [chartData])
+
+    
+
+
 
 
 
@@ -98,12 +108,6 @@ export default function TimeToComplete({ index }) {
         }
     }, [])
 
-    const onScroll=(e,step)=>{
-        let a=e?.target?.scrollLeft
-        let b = e?.target?.scrollWidth - e?.target?.offsetWidth;
-        // console.log(a/b,step*(a/b))
-        set_pagination(step*(a/b))
-    }
 
 
     useEffect(() => {
@@ -112,16 +116,22 @@ export default function TimeToComplete({ index }) {
 
     return (
         <div className="ttc">
-            <Line
-                options={chart_option}
-                data={chartData}
-                height={200}
-                className="benchmark_line_chart"
-                ref={chartRef}
-            />
+            <div>
+               <label>
+                Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4,e.target.value))} /> 
+               </label>
+                <Line
+                    options={chart_option}
+                    data={chartData}
+                    height={200}
+                    className="benchmark_line_chart"
+                    ref={chartRef}
+                />
+            </div>
             <ChartScrollbar
                 scroll_count={Math.ceil(_iteration_data?.length / max_items)}
                 onScroll={onScroll}
+                className="chart_scrollbar"
             />
         </div>
     )

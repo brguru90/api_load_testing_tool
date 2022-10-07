@@ -1,12 +1,37 @@
 .ttc{
     width: 100%;
-    overflow-x: auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    label{
+        display: inline-block;
+        margin: 20px;
+        input{
+            margin-left: 10px;
+            text-align: center;
+            width: 60px;
+            outline: none;
+            border: none;
+            border-bottom: solid 1px  rgb(29, 23, 203);
+            &:focus{
+                outline: none;
+                border: none;
+                border-bottom: solid 1px  rgb(13, 10, 111);
+            }
+        }
+    
+    }
     .benchmark_line_chart{
         margin-left: 20px;
         margin-right: 50px;
         margin-top: 35px;
         margin-bottom: 20px;
         width: 1000px;
+    }
+
+    .chart_scrollbar{
     }
     
 }

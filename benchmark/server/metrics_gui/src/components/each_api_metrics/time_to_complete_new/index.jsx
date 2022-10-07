@@ -70,11 +70,8 @@ export default function TimeToComplete({ index }) {
         console.log(`Rendered: TimeToComplete index=${index}`)
     })
 
-    const onScroll=(e,step)=>{
-        let a=e?.target?.scrollLeft
-        let b = e?.target?.scrollWidth - e?.target?.offsetWidth;
-        // console.log(a/b,step*(a/b))
-        set_pagination(step*(a/b))
+    const onScroll=(page)=>{
+        set_pagination(page)
     }
 
     return (
