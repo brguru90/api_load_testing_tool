@@ -6,6 +6,7 @@ import (
 )
 
 var LogPath string = ""
+var DisableLogging bool=false
 
 type MyError struct{}
 
@@ -14,6 +15,10 @@ func (m *MyError) Error() string {
 }
 
 func LogToJSON(json_obj interface{}, log_path interface{}) error {
+	if(DisableLogging){
+		return nil
+	}
+
 	if LogPath == "" {
 		return &MyError{}
 	}
