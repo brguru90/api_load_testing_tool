@@ -106,6 +106,7 @@ func BenchmarkAPIAsMultiUser(
 	for request_ahead := range requests_ahead {
 		request_ahead_array = append(request_ahead_array, request_ahead)
 	}
+	requests_ahead=nil
 
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {

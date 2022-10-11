@@ -1,5 +1,7 @@
 * change "all_data" key to "overall metric"
 
+go build -v -o ./benchmark.bin && ./benchmark.bin
+
 * try, to create benchmark runner client & to make a decentralized client, so we can achive unique IP address
 benchmark server should distribute/assign size & time of API call(could be real time or planned) to the benchmark runner client
 & benchmark client should be scalable in a flexible way

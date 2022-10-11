@@ -1,3 +1,6 @@
 log.json
 log2.json
 __debug_bin
+benhmark
+benchmark.bin
+mem.pprof
