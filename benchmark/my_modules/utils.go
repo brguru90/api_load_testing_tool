@@ -158,6 +158,9 @@ func APIReq(
 			additional_detail.request_connected = connected_time
 			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
 		},
+		GotFirstResponseByte: func(){
+			additional_detail.request_received_first_byte=time.Now()
+		},
 		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
 		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
 		// },
