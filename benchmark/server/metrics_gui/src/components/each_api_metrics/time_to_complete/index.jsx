@@ -69,8 +69,6 @@ export default function TimeToComplete({ index }) {
         };
     }
 
-
-
     const [max_items, set_max_items] = useState(10)
     const [pagination, set_pagination] = useState(0)
     let start_index = pagination * max_items;
@@ -107,8 +105,6 @@ export default function TimeToComplete({ index }) {
             effectCalled.current = true
         }
     }, [])
-
-
 
     useEffect(() => {
         console.log(`Rendered: TimeToComplete index=${index}`)

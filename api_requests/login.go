@@ -88,10 +88,14 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	fmt.Printf("len of cred ==> %v\n", len(*store.LoginCredential_GetAll()))
 
 	payload_generator_callback := func(current_iteration int64) map[string]interface{} {
-		return map[string]interface{}{
-			// "email": all_users_email[current_iteration],
-			"email": store.LoginCredential_Get(current_iteration % concurrent_req).Email,
+		if len(*store.LoginCredential_GetAll())>int(current_iteration % concurrent_req){
+			fmt.Printf("%d-%s\n",current_iteration % concurrent_req,store.LoginCredential_Get(current_iteration % concurrent_req).Email)
+			return map[string]interface{}{
+				// "email": all_users_email[current_iteration],
+				"email": store.LoginCredential_Get(current_iteration % concurrent_req).Email,
+			}			
 		}
+		return map[string]interface{}{}
 	}
 
 	request_interceptor := func(req *http.Request, uid int64) {

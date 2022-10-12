@@ -73,12 +73,10 @@ func RunServer(disable_color bool,gin_mode string) {
 	fmt.Printf("\nRunning server on http://localhost%s\n",bind_to_host)
 
 	go func ()  {
-		// if gin_mode	== "release" {
-		// 	time.Sleep(time.Second*5)
-		// 	openbrowser("http://"+bind_to_host)
-		// }
-		time.Sleep(time.Second*5)
-		openbrowser("http://localhost"+bind_to_host)
+		if gin_mode	== "release" {
+			time.Sleep(time.Second*5)
+			openbrowser("http://localhost"+bind_to_host)
+		}
 	}()
 	all_router.Run(bind_to_host)
 }

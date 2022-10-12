@@ -18,6 +18,10 @@ func GetUserDetailAsMultiUser(_url string, total_req int64, concurrent_req int64
 	request_interceptor := func(req *http.Request, uid int64) {
 		// fmt.Printf("request interceptor uid--> %v\n", uid)
 
+		if len(*store.GetSessionsRefs()) <= int(uid%concurrent_req){
+			return 
+		}
+
 		req.Header.Add("csrf_token", (*store.GetSessionsRefs())[uid%concurrent_req].CSRF_token)
 
 		for _, cookie := range (*store.GetSessionsRefs())[uid%concurrent_req].Cookies {
