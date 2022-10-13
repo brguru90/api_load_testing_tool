@@ -19,7 +19,6 @@ export default function ChartScrollbar({ className = "", scroll_count, onScroll 
         // </div>
         <div className={styles["chart_scrollbar_parent2"]+" "+className}>
             <input type="range" min="0" max={scroll_count * scrollFractions} value={currentRange} step="1" className={styles["chart_scrollbar2"]} onChange={e => {
-                console.log("e", e)
                 setCurrentRange(e.target.value)
                 onScroll(e.target.value / scrollFractions)
             }} /><span className={styles["scroll_count"]}>{Math.round(currentRange/ scrollFractions)}/{scroll_count}</span>

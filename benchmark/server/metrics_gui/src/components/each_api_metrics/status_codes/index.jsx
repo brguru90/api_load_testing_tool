@@ -98,8 +98,7 @@ export default function StatusCodes({ APIindex }) {
 
 
     const onScroll = (page) => {
-        console.log("page", page)
-        set_pagination(Math.round(page))
+        set_pagination(page)
     }
 
     useEffect(() => {

@@ -45,21 +45,21 @@ export default function TimeToComplete({ APIindex }) {
             labels: dt.map(data => data?.iteration_id + 1),
             datasets: [
                 {
-                    label: 'total time to complete',
+                    label: 'total time to complete complete all APIs',
                     data: dt.map(data => data?.Total_time_to_complete_all_apis_in_millesec),
                     borderColor: 'rgb(53, 162, 235)',
                     backgroundColor: 'rgba(53, 162, 235, 0.5)',
                     yAxisID: 'y',
                 },
                 {
-                    label: 'average time to complete',
+                    label: 'average time to complete APIs',
                     data: dt.map(data => data?.Avg_time_to_complete_api_in_millesec),
                     borderColor: 'rgb(8, 201, 18)',
                     backgroundColor: 'rgba(8, 201, 18, 0.5)',
                     yAxisID: 'y',
                 },
                 {
-                    label: 'average time to connect',
+                    label: 'average time to connect APIs',
                     data: dt.map(data => data?.Avg_time_to_connect_api_in_millesec),
                     borderColor: 'rgb(245, 186, 37)',
                     backgroundColor: 'rgba(245, 186, 37, 0.5)',
@@ -75,6 +75,7 @@ export default function TimeToComplete({ APIindex }) {
     const [chartData, setChartData] = useState(structure_data(_iteration_data.slice(start_index, start_index + max_items)))
     useMemo(() => {
         start_index = pagination * max_items;
+        console.log("start_index",start_index)
         setChartData(structure_data(_iteration_data.slice(start_index, start_index + max_items)))
         // setSeries(() => {
         //     const s = structure_data(_iteration_data)
@@ -85,8 +86,7 @@ export default function TimeToComplete({ APIindex }) {
 
 
     const onScroll = (page) => {
-        console.log("page",page)
-        set_pagination(Math.round(page))
+        set_pagination(page)
     }
 
     // useEffect(() => {
