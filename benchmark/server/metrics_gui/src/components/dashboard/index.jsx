@@ -19,7 +19,7 @@ export default function Dashboard() {
                 <div className={styles["test_case"]}>
                     {
                         Array.from({ length: test_cases_len }, (_, i) => i + 1)
-                            .map((e, i) => <APIMetrics key={i} index={i} />)
+                            .map((e, i) => <APIMetrics key={i} APIindex={i} />)
                     }
                 </div>
             </div>

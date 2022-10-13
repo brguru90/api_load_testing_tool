@@ -22,6 +22,7 @@ type BenchmarkData struct {
 	Concurrent_request              int64
 	Total_number_of_request         int64
 	Avg_time_to_connect_api         int64                     `json:"Avg_time_to_connect_api_in_millesec,omitempty"`
+	Avg_time_to_receive_first_byte  int64                     `json:"Avg_time_to_receive_first_byte,omitempty"`
 	Avg_time_to_complete_api        int64                     `json:"Avg_time_to_complete_api_in_millesec,omitempty"`
 	Min_time_to_complete_api        int64                     `json:"Min_time_to_complete_api_in_millesec,omitempty"`
 	Max_time_to_complete_api        int64                     `json:"Max_time_to_complete_api_in_millesec,omitempty"`
@@ -46,7 +47,7 @@ type AdditionalAPIDetails struct {
 	request_id                  int64
 	request_sent                time.Time
 	request_connected           time.Time
-	request_received_first_byte time.Time
+	request_receives_first_byte time.Time
 	request_processed           time.Time
 	request_payload_size        int
 	response_payload_size       int
@@ -57,6 +58,7 @@ type BenchMarkPerSecondCount struct {
 	To_time_duration                     time.Time
 	Request_sent                         int64
 	Request_connected                    int64
+	Request_receives_first_byte          int64
 	Request_processed                    int64
 	Total_request_payload_size_in_bytes  float64
 	Total_response_payload_size_in_bytes float64

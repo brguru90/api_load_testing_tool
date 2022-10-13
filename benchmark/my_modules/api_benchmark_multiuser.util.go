@@ -72,7 +72,7 @@ func BenchmarkAPIAsMultiUser(
 	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
 	var iteration_wg, rh_iteration_wg sync.WaitGroup
 
-	var i, j, total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api int64
+	var i, j, total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api, avg_time_to_receive_first_byte_api int64
 
 	requests_ahead := make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request)
 
@@ -106,7 +106,7 @@ func BenchmarkAPIAsMultiUser(
 	for request_ahead := range requests_ahead {
 		request_ahead_array = append(request_ahead_array, request_ahead)
 	}
-	requests_ahead=nil
+	requests_ahead = nil
 
 	iterations_start_time := time.Now()
 	for i = 0; i < number_of_iteration; i++ {
@@ -150,6 +150,7 @@ func BenchmarkAPIAsMultiUser(
 
 		avg_time_to_complete_api = 0
 		avg_time_to_connect_api = 0
+		avg_time_to_receive_first_byte_api = 0
 		min_time_to_complete_api := math.Inf(1)
 		max_time_to_complete_api := 0.0
 		status_codes := make(map[int]int64)
@@ -158,6 +159,7 @@ func BenchmarkAPIAsMultiUser(
 		for message := range messages {
 			avg_time_to_complete_api += message.Time_to_complete_api
 			avg_time_to_connect_api += message.Data.context_data.time_to_connect
+			avg_time_to_receive_first_byte_api += message.Data.context_data.ttfb
 			var cur_status_code int = message.Data.context_data.status_code
 			status_codes[cur_status_code] += 1
 
@@ -176,6 +178,7 @@ func BenchmarkAPIAsMultiUser(
 
 		avg_time_to_complete_api = avg_time_to_complete_api / concurrent_request
 		avg_time_to_connect_api = avg_time_to_connect_api / concurrent_request
+		avg_time_to_receive_first_byte_api = avg_time_to_receive_first_byte_api / concurrent_request
 
 		status_code_in_percentage := make(map[int]float64)
 		for status_code, occurrence := range status_codes {
@@ -202,7 +205,7 @@ func BenchmarkAPIAsMultiUser(
 		if len(additional_details_arr) > 0 {
 			for {
 				// fmt.Printf("prev_iteration_time=%v,track_iteration_time=%v\n",prev_iteration_time,track_iteration_time)
-				var _request_sent_in_sec, _request_connected_in_sec, _request_processed_in_sec int64
+				var _request_sent_in_sec, _request_connected_in_sec, _request_received_first_byte_in_sec, _request_processed_in_sec int64
 				var request_payload_size float64 = 0
 				var response_payload_size float64 = 0
 				for _, additional_detail := range additional_details_arr {
@@ -212,6 +215,9 @@ func BenchmarkAPIAsMultiUser(
 					}
 					if additional_detail.request_connected.After(prev_iteration_time) && additional_detail.request_connected.Before(track_iteration_time) {
 						_request_connected_in_sec++
+					}
+					if additional_detail.request_receives_first_byte.After(prev_iteration_time) && additional_detail.request_receives_first_byte.Before(track_iteration_time) {
+						_request_received_first_byte_in_sec++
 					}
 					if additional_detail.request_processed.After(prev_iteration_time) && additional_detail.request_processed.Before(track_iteration_time) {
 						_request_processed_in_sec++
@@ -224,6 +230,7 @@ func BenchmarkAPIAsMultiUser(
 					Request_sent:                         _request_sent_in_sec,
 					Request_connected:                    _request_connected_in_sec,
 					Request_processed:                    _request_processed_in_sec,
+					Request_receives_first_byte:          _request_received_first_byte_in_sec,
 					Total_request_payload_size_in_bytes:  request_payload_size,
 					Total_response_payload_size_in_bytes: response_payload_size,
 				})
@@ -244,6 +251,7 @@ func BenchmarkAPIAsMultiUser(
 			Status_codes:                    status_codes,
 			Concurrent_request:              concurrent_request,
 			Avg_time_to_connect_api:         avg_time_to_connect_api,
+			Avg_time_to_receive_first_byte:  avg_time_to_receive_first_byte_api,
 			Avg_time_to_complete_api:        avg_time_to_complete_api,
 			Min_time_to_complete_api:        int64(min_time_to_complete_api),
 			Max_time_to_complete_api:        int64(max_time_to_complete_api),

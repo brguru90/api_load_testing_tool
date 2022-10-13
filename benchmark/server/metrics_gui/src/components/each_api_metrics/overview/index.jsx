@@ -2,9 +2,9 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import "./style.scss"
 
-export default function APIMetricsOverview({ index, url }) {
+export default function APIMetricsOverview({ APIindex, url }) {
 
-  const overview_data = useSelector(state => state.metrics_data?.[index]?.all_data || {})
+  const overview_data = useSelector(state => state.metrics_data?.[APIindex]?.all_data || {})
 
   return (
     <div className='api_metrics_overview'>

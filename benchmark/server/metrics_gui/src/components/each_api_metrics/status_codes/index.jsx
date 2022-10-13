@@ -27,11 +27,11 @@ ChartJS.register(
     Legend
 );
 
-export default function StatusCodes({ index }) {
+export default function StatusCodes({ APIindex }) {
 
     const chartRef = useRef(null);
     const _iteration_data = useSelector(state => {
-        const iteration_data = state.metrics_data?.[index]?.iteration_data
+        const iteration_data = state.metrics_data?.[APIindex]?.iteration_data
         if (iteration_data?.length) {
             return iteration_data
         }
@@ -103,7 +103,7 @@ export default function StatusCodes({ index }) {
     }
 
     useEffect(() => {
-        console.log(`Rendered: StatusCodes index=${index}`)
+        console.log(`Rendered: StatusCodes index=${APIindex}`)
     })
 
     return (

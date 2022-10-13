@@ -40,6 +40,19 @@
                 margin-bottom: 40px;
             }
 
+            &.pie_charts{
+                padding: 20px;
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+
+                .pie_chart{
+                    width: max(50%,200px);
+                    height: 200px;
+                }
+            }
+
         }
     }
 }

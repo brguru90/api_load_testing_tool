@@ -22,6 +22,7 @@ type ContextData struct {
 	body            []byte
 	time            int64
 	time_to_connect int64
+	ttfb            int64
 }
 
 type APIData struct {
@@ -148,6 +149,7 @@ func APIReq(
 
 	start_time := time.Now()
 	var connected_time time.Time = start_time
+	var ttfb time.Time = start_time
 	additional_detail.request_sent = start_time
 	additional_detail.request_payload_size = api_request.request_size
 
@@ -158,8 +160,9 @@ func APIReq(
 			additional_detail.request_connected = connected_time
 			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
 		},
-		GotFirstResponseByte: func(){
-			additional_detail.request_received_first_byte=time.Now()
+		GotFirstResponseByte: func() {
+			ttfb = time.Now()
+			additional_detail.request_receives_first_byte = time.Now()
 		},
 		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
 		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
@@ -256,6 +259,7 @@ func APIReq(
 			body:            body,
 			time:            end_time.Sub(start_time).Milliseconds(),
 			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
+			ttfb:            ttfb.Sub(start_time).Milliseconds(),
 		},
 	}, end_time.Sub(start_time).Milliseconds(), resp, nil
 

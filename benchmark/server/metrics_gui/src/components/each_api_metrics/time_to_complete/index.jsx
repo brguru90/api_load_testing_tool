@@ -27,11 +27,11 @@ ChartJS.register(
     Legend
 );
 
-export default function TimeToComplete({ index }) {
+export default function TimeToComplete({ APIindex }) {
 
     const chartRef = useRef(null);
     const _iteration_data = useSelector(state => {
-        const iteration_data = state.metrics_data?.[index]?.iteration_data
+        const iteration_data = state.metrics_data?.[APIindex]?.iteration_data
         if (iteration_data?.length) {
             return iteration_data
         }
@@ -107,7 +107,7 @@ export default function TimeToComplete({ index }) {
     }, [])
 
     useEffect(() => {
-        console.log(`Rendered: TimeToComplete index=${index}`)
+        console.log(`Rendered: TimeToComplete index=${APIindex}`)
     })
 
     return (
