@@ -49,7 +49,7 @@
 
                 .pie_chart{
                     width: max(50%,200px);
-                    height: 200px;
+                    min-height: 200px;
                 }
             }
 

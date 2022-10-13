@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import ReactApexChart from "react-apexcharts"
-import ApexCharts from "apexcharts"
 import { useSelector } from 'react-redux'
 import { chart_option } from "./chart_option"
 
@@ -16,7 +15,6 @@ export default function StatusCodePieChart({ APIindex }) {
 
   const status_code_coverage = useMemo(() => {
     const StatusCodesInPerc = {}
-    console.log("StatusCodePieChart _iteration_data", _iteration_data)
     _iteration_data.forEach(({ Status_code_in_percentage }) => {
       Object.entries(Status_code_in_percentage || {}).forEach(([code, perc]) => {
         if (StatusCodesInPerc[code] == undefined) {
@@ -29,8 +27,6 @@ export default function StatusCodePieChart({ APIindex }) {
     Object.entries(StatusCodesInPerc).forEach(([code, total_perc]) => {
       StatusCodesInPerc[code] = Number((total_perc / _iteration_data?.length).toFixed(2))
     })
-
-    console.log("StatusCodesInPerc", StatusCodesInPerc)
     return StatusCodesInPerc
 
   }, [_iteration_data?.length])
@@ -52,9 +48,13 @@ export default function StatusCodePieChart({ APIindex }) {
     })
   }
 
+  useEffect(() => {
+    console.log(`Rendered: StatusCodePieChart index=${APIindex}`)
+  })
+
   return (
     <div>
-      <ReactApexChart options={_chart_option} series={Object.values(status_code_coverage || {})} type="pie" width={300} />
+      <ReactApexChart options={_chart_option} series={Object.values(status_code_coverage || {})} type="pie" width={340} />
     </div>
   )
 }
