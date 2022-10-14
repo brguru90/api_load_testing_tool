@@ -1,5 +1,4 @@
 import React, { useEffect } from "react"
-import { Link } from "react-router-dom"
 import APIMetrics from "../each_api_metrics/index.jsx"
 import styles from "./style.module.scss"
 import { useSelector } from "react-redux"
@@ -23,7 +22,6 @@ export default function Dashboard() {
                     }
                 </div>
             </div>
-            <Link to="page2">view Page2</Link> <br />
         </div>
     )
 }

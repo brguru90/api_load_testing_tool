@@ -3,7 +3,7 @@ const MetricsReducer = (state = null, action) => {
         case "SET_METRICS":
             return action.payload
         case "RESET_METRICS":
-            return null
+            return {}
         default:
             return state
     }

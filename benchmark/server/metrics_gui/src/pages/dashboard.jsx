@@ -1,26 +1,19 @@
 import React, { useEffect, useRef, useState } from "react"
-import { Link } from "react-router-dom"
 import Dashboard from "../components/dashboard/index.jsx"
-import { useDispatch, useSelector } from "react-redux"
-import { GetBenchmarkMetrics } from "../services/metric.data"
-GetBenchmarkMetrics
+import { useSelector } from "react-redux"
 
 export default function dashboard_page() {
-    const effectCalled = useRef(false)
-
-    const dispatch = useDispatch()
+    const last_scroll_position = useSelector(state => state.other?.last_screen_scroll)
 
     useEffect(() => {
-        if (!effectCalled.current) {
-            effectCalled.current = true
-            GetBenchmarkMetrics((data) => {
-                dispatch({
-                    type: "SET_METRICS",
-                    payload: [...data],
-                })
-            })
-        }
+        if(last_scroll_position!=null){
+            window.scroll({
+                top: last_scroll_position,
+                left: 0,
+                behavior: 'smooth'
+              });
+        }      
     }, [])
-
+    
     return <Dashboard />
 }

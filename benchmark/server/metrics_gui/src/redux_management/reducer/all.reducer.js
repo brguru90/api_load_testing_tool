@@ -1,9 +1,18 @@
 import metric_reducer from "./metrics.reducer"
-import reducer_2 from "./reducer2"
+import other from "./other"
 import {combineReducers} from "redux"
+import { persistReducer } from 'redux-persist'
+import storage from 'redux-persist/lib/storage'
+
+
+const rootPersistConfig = {
+    key: 'root',
+    storage: storage,
+    blacklist: ['metrics_data']
+  }
 
 const allReducer = combineReducers({
     metrics_data: metric_reducer,
-    data_2: reducer_2,
+    other: other,
 })
-export default allReducer
+export default persistReducer(rootPersistConfig,allReducer)

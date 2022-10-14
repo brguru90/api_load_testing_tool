@@ -3,10 +3,13 @@ import ReactDOM from "react-dom/client"
 import "./index.css"
 import App from "./App"
 import reportWebVitals from "./reportWebVitals"
-import {createStore, compose, applyMiddleware} from "redux"
-import {Provider} from "react-redux"
+import { createStore, compose, applyMiddleware } from "redux"
+import { Provider } from "react-redux"
 import thunk from "redux-thunk"
 import allReducer from "./redux_management/reducer/all.reducer.js"
+import { PersistGate } from 'redux-persist/integration/react'
+import { persistStore } from 'redux-persist'
+
 
 const composeEnhancer =
     (window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ &&
@@ -17,12 +20,15 @@ const composeEnhancer =
     compose
 
 const store = createStore(allReducer, composeEnhancer(applyMiddleware(thunk)))
+let persistor = persistStore(store)
 
 const root = ReactDOM.createRoot(document.getElementById("root"))
 root.render(
     <React.StrictMode>
         <Provider store={store}>
-            <App />
+            <PersistGate loading={<h1>Loading cache</h1>} persistor={persistor}>
+                <App />
+            </PersistGate>
         </Provider>
     </React.StrictMode>
 )

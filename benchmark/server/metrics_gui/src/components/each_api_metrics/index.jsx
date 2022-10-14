@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import styles from "./style.module.scss"
 import APIMetricsOverview from './overview'
 import TimeToComplete from "./time_to_complete"
@@ -8,8 +8,13 @@ import APIPerSecondMetrics from './each_iteration_in_detail'
 import RequestTimingsPieChart from './iteration_pi_charts/request_timings'
 import StatusCodePieChart from './iteration_pi_charts/status_code'
 import TimeForEachIterationPieChart from './iteration_pi_charts/time_for_each_iteration'
+import { useHistory } from "react-router-dom";
+
 
 export default function APIMetrics({ APIindex }) {
+    const history = useHistory();
+    const dispatch = useDispatch()
+
     useEffect(() => {
         console.log("APIMetrics: Dashboard")
     })
@@ -18,6 +23,17 @@ export default function APIMetrics({ APIindex }) {
         const [url, process_id] = [state.metrics_data?.[APIindex]?.url, state.metrics_data?.[APIindex]?.process_uid]
         return [url || "no url", process_id || "no process_id"]
     }, () => APIindex != undefined)
+
+    const navigateToIterationMetrics=(e)=>{
+        e.preventDefault()
+        dispatch({
+            type: "SET_OTHER",
+            payload: {
+                last_screen_scroll:window.pageYOffset || document.documentElement.scrollTop
+            },
+        })
+        history.push("iterations_metrics?api_index="+APIindex);
+    }
 
     return (
         <fieldset className={styles['api_metrics']}>
@@ -40,11 +56,13 @@ export default function APIMetrics({ APIindex }) {
                         <StatusCodePieChart APIindex={APIindex} />
                     </div>
                     <div className={styles['pie_chart']}>
-                        <TimeForEachIterationPieChart APIindex={APIindex}/>
+                        <TimeForEachIterationPieChart APIindex={APIindex} />
                     </div>
                 </div>
             </div>
-            <APIPerSecondMetrics APIindex={APIindex} />
+            {/* <APIPerSecondMetrics APIindex={APIindex} /> */}
+
+            <a href="" onClick={navigateToIterationMetrics}> view all iteration data</a> <br />
         </fieldset>
     )
 }
