@@ -30,7 +30,8 @@ const chart_option = {
             title:{
                 display: true,
                 text: 'Time (ms)'
-            }
+            },
+            beginAtZero: true,
         },
         x:{
             title:{
@@ -38,7 +39,7 @@ const chart_option = {
                 text: 'Iterations',
                 align:"start"
             }
-        }
+        },
     },
 };
 

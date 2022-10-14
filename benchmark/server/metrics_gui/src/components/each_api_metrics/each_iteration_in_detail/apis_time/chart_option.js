@@ -30,7 +30,8 @@ const chart_option = {
             title:{
                 display: true,
                 text: 'Time (ms)'
-            }
+            },
+            beginAtZero: true
         },
         x:{
             title:{
