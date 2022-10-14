@@ -1,18 +1,122 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import styles from "./style.module.scss"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Chart, Line } from 'react-chartjs-2';
+import { chart_option } from "./chart_option"
+import ChartScrollbar from "../../../../common_components/chart_scrollbar/index.jsx"
 
-export default function APITimes() {
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export default function APITimes({ iteration }) {
+
+  useEffect(() => {
+    console.log(`Rendered: APITimes index=${iteration.iteration_id}`)
+  })
+
+  const structure_data = () => {
+    const temp = [{
+      To_time_duration: iteration.Benchmark_per_second_metric[0].From_time_duration
+    }, ...iteration.Benchmark_per_second_metric]
+    return {
+      labels: temp.map(data => data.To_time_duration),
+      datasets: [
+        {
+          label: 'Request sent',
+          data: temp.map(data => data?.Request_sent),
+          borderColor: 'rgb(53, 162, 235)',
+          backgroundColor: 'rgba(53, 162, 235, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Request_connected',
+          data: temp.map(data => data?.Request_connected),
+          borderColor: 'rgb(8, 201, 18)',
+          backgroundColor: 'rgba(8, 201, 18, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Request_receives_first_byte',
+          data: temp.map(data => data?.Request_receives_first_byte),
+          borderColor: 'rgb(245, 186, 37)',
+          backgroundColor: 'rgba(245, 186, 37, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Request_processed',
+          data: temp.map(data => data?.Request_processed),
+          borderColor: 'rgb(245, 186, 27)',
+          backgroundColor: 'rgba(245, 186, 27, 0.5)',
+          yAxisID: 'y',
+        },
+      ],
+    };
+  }
+
+  const [max_items, set_max_items] = useState(10)
+  const [pagination, set_pagination] = useState(0)
+  let start_index = pagination * max_items;
+
+  const chartData = useMemo(() => {
+    start_index = pagination * max_items;
+    if (iteration.Benchmark_per_second_metric?.length) {
+      return structure_data(iteration.Benchmark_per_second_metric.slice(start_index, start_index + max_items))
+    }
+    return []
+
+  }, [iteration?.Benchmark_per_second_metric?.length, pagination, max_items])
+
+
+  const onScroll = (page) => {
+    set_pagination(page)
+  }
+
   return (
-    <div>
+    <div className={styles["apis_time"]}>
 
-        <h1>APITimes</h1>
-        <p>Time to send</p>
-        <p>Time to connect</p>
-        <p>Time to first byte</p>
-        <p>Time to process</p><br />
+      <h1>APITimes</h1>
+      <p>Time to send</p>
+      <p>Time to connect</p>
+      <p>Time to first byte</p>
+      <p>Time to process</p><br />
+
+      {JSON.stringify(chartData)}
+
+      <div>
+        <label>
+          Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4, e.target.value))} />
+        </label>
+        <Line
+          options={chart_option}
+          data={chartData}
+          height={200}
+          className="benchmark_line_chart"
+        />
+      </div>
+      <ChartScrollbar
+        scroll_count={Math.ceil((iteration?.Benchmark_per_second_metric?.length + 1) / max_items)}
+        onScroll={onScroll}
+        className="chart_scrollbar"
+      />
 
 
-        <p>Total_request_payload_size_in_bytes</p>
-        <p>Total_response_payload_size_in_bytes</p>
     </div>
   )
 }

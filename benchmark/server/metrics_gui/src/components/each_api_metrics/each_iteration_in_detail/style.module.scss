@@ -1,32 +1,41 @@
-.per_second_metrics {
+.per_second_metrics_dashboard {
+    background-color: #e7eaf6;
 
-    .title{
-        margin-left: 25px;
-    }
+    .per_second_metrics {
+        margin: 20px;
+        margin-top: 0px;
+        padding-top: 20px;
 
-    .per_second_metrics_set {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-evenly;
-        flex-wrap: wrap;
+        .title {
+            margin-left: 25px;
+        }
 
-        .per_second_data {
-            width: calc(100% - 40px);
+        .per_second_metrics_set {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
 
-            @media only screen and (min-width: 1400px) {
-                flex-basis: calc(50% - 40px);
-            }
+            .per_second_data {
+                width: calc(100% - 40px);
 
-            background-color: white;
-            box-shadow: 10px 10px 38px -21px rgba(0, 0, 0, 0.78);
-            min-height: 400px;
-            margin-top: 40px;
+                @media only screen and (min-width: 1400px) {
+                    flex-basis: calc(50% - 40px);
+                }
 
-            &:nth-last-of-type(1),
-            &:nth-last-of-type(2) {
-                margin-bottom: 40px;
+                background-color: white;
+                padding: 40px;
+                box-shadow: 10px 10px 38px -21px rgba(0, 0, 0, 0.78);
+                min-height: 400px;
+                margin-top: 40px;
+
+                &:nth-last-of-type(1),
+                &:nth-last-of-type(2) {
+                    margin-bottom: 40px;
+                }
             }
         }
+
     }
 
 }

@@ -6,7 +6,7 @@ import styles from "./style.module.scss"
 
 export default function APIPerSecondMetrics({ APIindex }) {
     const history = useHistory();
-    const [url, iteration_ids] = useSelector(state => [state.metrics_data?.[APIindex]?.url, state.metrics_data?.[APIindex]?.iteration_data?.map(item => item?.iteration_id)])
+    const [url, iterations] = useSelector(state => [state.metrics_data?.[APIindex]?.url, state.metrics_data?.[APIindex]?.iteration_data || []])
 
     const navigateToDashBoard = (e) => {
         e.preventDefault()
@@ -16,14 +16,17 @@ export default function APIPerSecondMetrics({ APIindex }) {
         })
     }
 
-
     const effectCalled = useRef(false)
     useEffect(() => {
         if (!effectCalled.current) {
             effectCalled.current = true
+            window.scroll({
+                top: 0,
+                left: 0
+            });
             history.listen(location => {
-                if (history.action === 'POP' && location.pathname=="/") {
-                    console.log(window.location.pathname,location.pathname)
+                if (history.action === 'POP' && location.pathname == "/") {
+                    console.log(window.location.pathname, location.pathname)
                     history.replace({
                         pathname: '/',
                         state: { restoreScroll: true }
@@ -33,22 +36,29 @@ export default function APIPerSecondMetrics({ APIindex }) {
         }
     })
 
+    useEffect(() => {
+        console.log(`Rendered: APIPerSecondMetrics index=${APIindex}`)
+    })
+
     return (
-        <div className={styles['per_second_metrics']}>
-            <h1 className={styles['title']}>API Per Second Metrics - {url}</h1>
-            <div className={styles['per_second_metrics_set']}>
-                {
-                    iteration_ids?.map(id => {
-                        return <div key={id} className={styles['per_second_data']}>
-                            <APITimes />
-                        </div>
-                    })
-                }
+        <div className={styles['per_second_metrics_dashboard']}>
+            <div className={styles['per_second_metrics']}>
+                <h1 className={styles['title']}>                    
+                    <a href="" onClick={navigateToDashBoard}>
+                        &lt;&lt; Back &nbsp;&nbsp;
+                    </a>
+                    API Per Second Metrics - {url}</h1>
+                <div className={styles['per_second_metrics_set']}>
+                    {
+                        iterations?.map((iter) => {
+                            return <div key={iter.iteration_id} className={styles['per_second_data']}>
+                                <APITimes iteration={iter} />
+                            </div>
+                        })
+                    }
+                </div>
             </div>
 
-            <a href="" onClick={navigateToDashBoard}>
-                Back to dashboard
-            </a>
         </div>
     )
 }

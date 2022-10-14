@@ -60,8 +60,6 @@ export default function APIMetrics({ APIindex }) {
                     </div>
                 </div>
             </div>
-            {/* <APIPerSecondMetrics APIindex={APIindex} /> */}
-
             <a href="" onClick={navigateToIterationMetrics}> view all iteration data</a> <br />
         </fieldset>
     )
