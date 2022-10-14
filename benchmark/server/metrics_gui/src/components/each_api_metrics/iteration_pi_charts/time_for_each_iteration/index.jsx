@@ -1,18 +1,13 @@
 import React, { useEffect, useMemo } from 'react'
-import { useSelector } from 'react-redux'
 import ReactApexChart from "react-apexcharts"
 import { chart_option } from "./chart_option"
-
+import "./style.scss"
+import useExtractIteration from '../../util/useExtractIteration'
 
 export default function TimeForEachIterationPieChart({ APIindex }) {
 
-  const _iteration_data = useSelector(state => {
-    const iteration_data = state.metrics_data?.[APIindex]?.iteration_data
-    if (iteration_data?.length) {
-      return iteration_data
-    }
-    return []
-  })
+  const _iteration_data = useExtractIteration({APIindex})
+
 
 
   const duration_of_iterations = useMemo(() => {
@@ -26,8 +21,8 @@ export default function TimeForEachIterationPieChart({ APIindex }) {
   })
 
   return (
-    <div>
-      <ReactApexChart options={_chart_option} series={duration_of_iterations || []} type="pie" width={500} height={500} />
+    <div className='time_for_each_duration_pie_chart'>
+      <ReactApexChart options={_chart_option} series={duration_of_iterations || []} type="pie" width={400} />
     </div>
   )
 }

@@ -27,7 +27,12 @@ const chart_option = {
         formatter: function(val, opts) {
             return  opts.w.globals.series[opts.seriesIndex]+" ms"
         }
-    }
+    },
+    title: {
+        text: 'Time taken to complete all individual iterations',
+        align: 'center',       
+        floating: false,
+    },
 };
 
 export {

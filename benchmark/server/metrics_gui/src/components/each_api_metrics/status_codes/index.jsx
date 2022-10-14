@@ -12,9 +12,9 @@ import {
 import { Chart, Line } from 'react-chartjs-2';
 
 import "./style.scss"
-import { useSelector } from "react-redux"
 import { chart_option } from "./chart_option"
 import ChartScrollbar from "../../../common_components/chart_scrollbar/index.jsx"
+import useExtractIteration from "../util/useExtractIteration";
 
 
 ChartJS.register(
@@ -30,15 +30,7 @@ ChartJS.register(
 export default function StatusCodes({ APIindex }) {
 
     const chartRef = useRef(null);
-    const _iteration_data = useSelector(state => {
-        const iteration_data = state.metrics_data?.[APIindex]?.iteration_data
-        if (iteration_data?.length) {
-            return iteration_data
-        }
-        return []
-    })
-
-
+    const _iteration_data = useExtractIteration({APIindex})
 
     const structure_data = (dt) => {
         const datasets = {}

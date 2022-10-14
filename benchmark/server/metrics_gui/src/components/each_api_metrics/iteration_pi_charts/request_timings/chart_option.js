@@ -1,4 +1,5 @@
 const chart_option = {
+    labels: ["Connecting", "Processing"],
     theme: {
         // monochrome: {
         //   enabled: true
@@ -14,23 +15,23 @@ const chart_option = {
     legend: {
         fontSize: '9px',
         offsetX: 20,
-        formatter: function(val, opts) {
-            return val + " - " + opts.w.globals.series[opts.seriesIndex]+"%"
-        }
+        // formatter: function(val, opts) {
+        //     return val + " - " + opts.w.globals.series[opts.seriesIndex]+" ms"
+        // }
     },
-    dataLabels:{
+    dataLabels: {
         style: {
             fontSize: '9px',
         },
+        formatter: function (val, opts) {
+            return opts.w.globals.series[opts.seriesIndex] + " ms"
+        }
     },
     title: {
-        text: ['Average occurrence of status code ','from all iteration'],
-        align: 'left',
+        text: 'Average of API timings for all Iterations',
+        align: 'left',        
         floating: false,
     },
-    chart: {
-        width: '100%'
-    }
 };
 
 export {

@@ -1,20 +1,16 @@
 import React, { useEffect, useMemo } from 'react'
 import ReactApexChart from "react-apexcharts"
-import { useSelector } from 'react-redux'
+import useExtractIteration from '../../util/useExtractIteration'
 import { chart_option } from "./chart_option"
+import "./style.scss"
 
 export default function StatusCodePieChart({ APIindex }) {
 
-  const _iteration_data = useSelector(state => {
-    const iteration_data = state.metrics_data?.[APIindex]?.iteration_data
-    if (iteration_data?.length) {
-      return iteration_data
-    }
-    return []
-  })
+  const _iteration_data = useExtractIteration({APIindex})
 
   const status_code_coverage = useMemo(() => {
     const StatusCodesInPerc = {}
+    const StatusCodesInValue = {}
     _iteration_data.forEach(({ Status_code_in_percentage }) => {
       Object.entries(Status_code_in_percentage || {}).forEach(([code, perc]) => {
         if (StatusCodesInPerc[code] == undefined) {
@@ -53,8 +49,8 @@ export default function StatusCodePieChart({ APIindex }) {
   })
 
   return (
-    <div>
-      <ReactApexChart options={_chart_option} series={Object.values(status_code_coverage || {})} type="pie" width={340} />
+    <div className='status_code_pie_chart'>
+      <ReactApexChart options={_chart_option} series={Object.values(status_code_coverage || {})} type="pie" width={300} />
     </div>
   )
 }
