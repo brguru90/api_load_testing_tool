@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { useHistory } from 'react-router-dom';
 import APITimes from './apis_time'
@@ -10,8 +10,28 @@ export default function APIPerSecondMetrics({ APIindex }) {
 
     const navigateToDashBoard = (e) => {
         e.preventDefault()
-        history.push("")
+        history.push({
+            pathname: '/',
+            state: { restoreScroll: true }
+        })
     }
+
+
+    const effectCalled = useRef(false)
+    useEffect(() => {
+        if (!effectCalled.current) {
+            effectCalled.current = true
+            history.listen(location => {
+                if (history.action === 'POP' && location.pathname=="/") {
+                    console.log(window.location.pathname,location.pathname)
+                    history.replace({
+                        pathname: '/',
+                        state: { restoreScroll: true }
+                    });
+                }
+            })
+        }
+    })
 
     return (
         <div className={styles['per_second_metrics']}>
