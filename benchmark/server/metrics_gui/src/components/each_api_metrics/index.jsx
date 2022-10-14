@@ -24,15 +24,15 @@ export default function APIMetrics({ APIindex }) {
         return [url || "no url", process_id || "no process_id"]
     }, () => APIindex != undefined)
 
-    const navigateToIterationMetrics=(e)=>{
+    const navigateToIterationMetrics = (e) => {
         e.preventDefault()
         dispatch({
             type: "SET_OTHER",
             payload: {
-                last_screen_scroll:window.pageYOffset || document.documentElement.scrollTop
+                last_screen_scroll: window.pageYOffset || document.documentElement.scrollTop
             },
         })
-        history.push("iterations_metrics?api_index="+APIindex);
+        history.push("iterations_metrics?api_index=" + APIindex);
     }
 
     return (
@@ -59,8 +59,10 @@ export default function APIMetrics({ APIindex }) {
                         <TimeForEachIterationPieChart APIindex={APIindex} />
                     </div>
                 </div>
+                <div className={styles['overall_api_metric']+" "+styles['non_grid']}>
+                    <a href="" onClick={navigateToIterationMetrics} className={styles['navigate_to_iteration_metrics']}> view all iteration data</a> <br />
+                </div>
             </div>
-            <a href="" onClick={navigateToIterationMetrics}> view all iteration data</a> <br />
         </fieldset>
     )
 }

@@ -31,39 +31,40 @@ export default function APITimes({ iteration }) {
     console.log(`Rendered: APITimes index=${iteration.iteration_id}`)
   })
 
-  const structure_data = () => {
-    const temp = [{
-      To_time_duration: iteration.Benchmark_per_second_metric[0].From_time_duration
-    }, ...iteration.Benchmark_per_second_metric]
+  const structure_data = (_Benchmark_per_second_metric) => {
+    
     return {
-      labels: temp.map(data => data.To_time_duration),
+      labels: _Benchmark_per_second_metric.map(data => {
+        const dt=new Date(data.To_time_duration)
+        return dt.toLocaleTimeString()+":"+dt.getMilliseconds()
+      }),
       datasets: [
         {
           label: 'Request sent',
-          data: temp.map(data => data?.Request_sent),
+          data: _Benchmark_per_second_metric.map(data => data?.Request_sent || 0),
           borderColor: 'rgb(53, 162, 235)',
           backgroundColor: 'rgba(53, 162, 235, 0.5)',
           yAxisID: 'y',
         },
         {
-          label: 'Request_connected',
-          data: temp.map(data => data?.Request_connected),
-          borderColor: 'rgb(8, 201, 18)',
-          backgroundColor: 'rgba(8, 201, 18, 0.5)',
-          yAxisID: 'y',
-        },
-        {
-          label: 'Request_receives_first_byte',
-          data: temp.map(data => data?.Request_receives_first_byte),
-          borderColor: 'rgb(245, 186, 37)',
-          backgroundColor: 'rgba(245, 186, 37, 0.5)',
-          yAxisID: 'y',
-        },
-        {
-          label: 'Request_processed',
-          data: temp.map(data => data?.Request_processed),
+          label: 'Request connected',
+          data: _Benchmark_per_second_metric.map(data => data?.Request_connected || 0),
           borderColor: 'rgb(245, 186, 27)',
           backgroundColor: 'rgba(245, 186, 27, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Request receives first_byte',
+          data: _Benchmark_per_second_metric.map(data => data?.Request_receives_first_byte || 0),
+          borderColor: 'rgb(237, 112, 9)',
+          backgroundColor: 'rgba(237, 112, 9, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Request processed',
+          data: _Benchmark_per_second_metric.map(data => data?.Request_processed || 0),
+          borderColor: 'rgb(8, 201, 18)',
+          backgroundColor: 'rgba(8, 201, 18, 0.5)',
           yAxisID: 'y',
         },
       ],
@@ -77,11 +78,14 @@ export default function APITimes({ iteration }) {
   const chartData = useMemo(() => {
     start_index = pagination * max_items;
     if (iteration.Benchmark_per_second_metric?.length) {
-      return structure_data(iteration.Benchmark_per_second_metric.slice(start_index, start_index + max_items))
+      return structure_data([{
+        To_time_duration: iteration.Benchmark_per_second_metric[0].From_time_duration
+      }, ...iteration.Benchmark_per_second_metric].slice(start_index, start_index + max_items))
+
     }
     return []
 
-  }, [iteration?.Benchmark_per_second_metric?.length, pagination, max_items])
+  }, [iteration?.Benchmark_per_second_metric?.length,pagination, max_items])
 
 
   const onScroll = (page) => {
@@ -90,15 +94,6 @@ export default function APITimes({ iteration }) {
 
   return (
     <div className={styles["apis_time"]}>
-
-      <h1>APITimes</h1>
-      <p>Time to send</p>
-      <p>Time to connect</p>
-      <p>Time to first byte</p>
-      <p>Time to process</p><br />
-
-      {JSON.stringify(chartData)}
-
       <div>
         <label>
           Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4, e.target.value))} />
@@ -111,7 +106,7 @@ export default function APITimes({ iteration }) {
         />
       </div>
       <ChartScrollbar
-        scroll_count={Math.ceil((iteration?.Benchmark_per_second_metric?.length + 1) / max_items)}
+        scroll_count={Math.ceil(iteration?.Benchmark_per_second_metric?.length / max_items)}
         onScroll={onScroll}
         className="chart_scrollbar"
       />

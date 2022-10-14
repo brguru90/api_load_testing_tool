@@ -17,7 +17,7 @@
             flex-wrap: wrap;
 
             .per_second_data {
-                width: calc(100% - 40px);
+                width: calc(50% - 40px);
 
                 @media only screen and (min-width: 1400px) {
                     flex-basis: calc(50% - 40px);

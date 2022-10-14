@@ -35,8 +35,7 @@
             min-height: 400px;
             margin-top: 40px;
 
-            &:nth-last-of-type(1),
-            &:nth-last-of-type(2) {
+            &:nth-last-of-type(1) {
                 margin-bottom: 40px;
             }
 
@@ -50,6 +49,19 @@
                 .pie_chart{
                     min-width: max(50%,200px);
                     min-height: 200px;
+                }
+            }
+
+            &.non_grid{
+                min-height: 50px;
+                align-self: flex-start;
+                @media only screen and (min-width: 1200px) {
+                    flex-basis: calc(100% - 55px);
+                    max-width: calc(100% - 55px);
+                }
+                .navigate_to_iteration_metrics{
+                    display: block;
+                    margin: 10px;
                 }
             }
 
