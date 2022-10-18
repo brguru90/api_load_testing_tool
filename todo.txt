@@ -2,11 +2,15 @@
 
 go build -v -o ./benchmark.bin && ./benchmark.bin
 
+
+* need to calculate request/second separately instead of Average API response time basis, it will give wrong value   
+* auto open web view after server up instead of timeout
+* currently sessions & other store are a single variable,
+    better to provide it as object, if user need to same store parallely else where then they can use new object 
+
+    
 * try, to create benchmark runner client & to make a decentralized client, so we can achive unique IP address
 benchmark server should distribute/assign size & time of API call(could be real time or planned) to the benchmark runner client
 & benchmark client should be scalable in a flexible way
 i think testing can be done using docker,
 & can be released as docker image and the code will be mounted to host drive, so user can write api calls,payload etc
-* auto open web view after server up instead of timeout
-* currently sessions & other store are a single variable,
-    better to provide it as object, if user need to same store parallely else where then they can use new object
