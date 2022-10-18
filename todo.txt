@@ -4,11 +4,12 @@ go build -v -o ./benchmark.bin && ./benchmark.bin
 
 
 * need to calculate request/second separately instead of Average API response time basis, it will give wrong value   
+ Ex: if Avg_time_to_complete_api_in_sec is 6.3025 Seconds
 * auto open web view after server up instead of timeout
 * currently sessions & other store are a single variable,
     better to provide it as object, if user need to same store parallely else where then they can use new object 
 
-    
+
 * try, to create benchmark runner client & to make a decentralized client, so we can achive unique IP address
 benchmark server should distribute/assign size & time of API call(could be real time or planned) to the benchmark runner client
 & benchmark client should be scalable in a flexible way
