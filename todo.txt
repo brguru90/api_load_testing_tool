@@ -7,3 +7,6 @@ benchmark server should distribute/assign size & time of API call(could be real 
 & benchmark client should be scalable in a flexible way
 i think testing can be done using docker,
 & can be released as docker image and the code will be mounted to host drive, so user can write api calls,payload etc
+* auto open web view after server up instead of timeout
+* currently sessions & other store are a single variable,
+    better to provide it as object, if user need to same store parallely else where then they can use new object

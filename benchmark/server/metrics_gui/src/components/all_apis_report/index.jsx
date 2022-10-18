@@ -35,9 +35,9 @@ export default function AllAPISReport() {
   const structure_data = (dt) => {
     return {
       labels: dt.map(data => {
-        let _url=[]
-        for(let i=0;i<=data?.Url?.length;i+=20){
-          _url.push(data?.Url?.slice(i,i+20))
+        let _url = []
+        for (let i = 0; i <= data?.Url?.length; i += 20) {
+          _url.push(data?.Url?.slice(i, i + 20))
         }
         return _url;
       }),
@@ -94,7 +94,9 @@ export default function AllAPISReport() {
 
   return (
     <div className={"all_apis_reports"}>
-      AllAPISReport<br />
+      <div className='title'>
+        All API&apos;s Report
+      </div><br />
       <div>
         <label>
           Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4, e.target.value))} />

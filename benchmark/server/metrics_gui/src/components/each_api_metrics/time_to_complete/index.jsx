@@ -59,6 +59,21 @@ export default function TimeToComplete({ APIindex }) {
                     backgroundColor: 'rgba(245, 186, 37, 0.5)',
                     yAxisID: 'y',
                 },
+
+                {
+                    label: 'Minimum time to complete APIs',
+                    data: dt.map(data => data?.Min_time_to_complete_api_in_millesec),
+                    borderColor: 'rgb(140, 3, 252)',
+                    backgroundColor: 'rgba(140, 3, 252, 0.5)',
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Maximum time to connect APIs',
+                    data: dt.map(data => data?.Max_time_to_complete_api_in_millesec),
+                    borderColor: 'rgb(252, 3, 74)',
+                    backgroundColor: 'rgba(252, 3, 74, 0.5)',
+                    yAxisID: 'y',
+                },
             ],
         };
     }
