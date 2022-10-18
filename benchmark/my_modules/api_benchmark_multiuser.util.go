@@ -34,6 +34,8 @@ func pushBenchMarkMetrics(data interface{}) {
 	store.GeneralStore_Append(data, t)
 }
 
+var BenchMarkEnded bool =false
+
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
 // have the callback to generate payload, intercept request & response
@@ -329,7 +331,9 @@ func BenchmarkAPIAsMultiUser(
 }
 
 func OnBenchmarkEnd() {
+	BenchmarkMetricEvent.Emit(nil)
 	BenchmarkMetricEvent.Dispose()
+	BenchMarkEnded=true
 }
 
 func InitBeforeBenchMarkStart() {

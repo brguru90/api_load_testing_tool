@@ -20,6 +20,13 @@ export default function App() {
                     type: "SET_METRICS",
                     payload: [...data],
                 })
+            },()=>{
+                dispatch({
+                    type: "SET_METRICS_EXTRA",
+                    payload: {
+                        benchmark_finished:true
+                    },
+                })
             })                        
         }
     }, [])

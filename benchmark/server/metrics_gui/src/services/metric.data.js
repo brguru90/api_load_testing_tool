@@ -1,9 +1,14 @@
 import {ManageWebSocket} from "./util"
 
-const GetBenchmarkMetrics = (callback) => {
-    if (!callback) return
+const GetBenchmarkMetrics = (onDataUpdated,onDataUpdateEnd) => {
+    if (!onDataUpdated) return
     const manageWebSocket = new ManageWebSocket("/metrics/")
     let existing_data = []
+
+    if(onDataUpdateEnd){
+        manageWebSocket.onClose=onDataUpdateEnd
+    }
+
     manageWebSocket.connect((raw_data) => {
         raw_data = JSON.parse(raw_data)
         // console.log("raw_data", raw_data)
@@ -32,7 +37,7 @@ const GetBenchmarkMetrics = (callback) => {
         }
 
         console.log("existing_data", JSON.parse(JSON.stringify(existing_data)))
-        callback(existing_data)
+        onDataUpdated(existing_data)
     })
 }
 

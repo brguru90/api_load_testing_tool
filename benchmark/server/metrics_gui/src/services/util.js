@@ -14,6 +14,7 @@ class ManageWebSocket {
             console.log("unhandled onmessage", e)
         }
     ) => {
+        const classScope=this
         let loc = window.location,
             ws_url
         if (loc.protocol === "https:") {
@@ -38,7 +39,9 @@ class ManageWebSocket {
             if (event.wasClean) {
                 console.log(
                     `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
-                )
+                );
+                classScope.onClose()
+                
             } else {
                 console.log("[close] Connection died")
             }
@@ -49,6 +52,10 @@ class ManageWebSocket {
         }
     }
 
+
+    onClose=(e)=>{
+        console.log(e,"unhandled close")
+    }
     send = (text) => {
         this.client.send(text)
     }

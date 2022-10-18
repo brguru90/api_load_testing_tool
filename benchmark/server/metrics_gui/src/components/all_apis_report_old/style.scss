@@ -1,0 +1,50 @@
+.all_apis_reports{
+    border: solid rgba(116, 116, 131, 0.459) 2px;
+    background-color: #fcfcff;
+    border-radius: 5px;
+    padding: 20px 30px;
+
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    label{
+        display: inline-block;
+        margin: 20px;
+        input{
+            margin-left: 10px;
+            text-align: center;
+            width: 60px;
+            outline: none;
+            border: none;
+            border-bottom: solid 1px  rgb(29, 23, 203);
+            &:focus{
+                outline: none;
+                border: none;
+                border-bottom: solid 1px  rgb(13, 10, 111);
+            }
+        }
+    
+    }
+    .benchmark_line_chart{
+        margin-left: 20px;
+        margin-right: 50px;
+        margin-top: 35px;
+        margin-bottom: 20px;
+        width: 1000px;
+
+        .apexcharts-canvas{
+            min-height: 500px !important;
+            &>svg{
+                min-height: 500px !important;
+            }
+        }
+    }
+
+    .chart_scrollbar{
+        margin: 0px 20px;
+        margin-bottom: 40px;
+    }
+
+}
