@@ -63,6 +63,20 @@ export default function AllAPISReport() {
           backgroundColor: 'rgba(245, 186, 37, 0.5)',
           yAxisID: 'y',
         },
+        {
+          label: 'Minimum time to complete APIs',
+          data: dt.map(data => data?.Min_time_to_complete_api_in_sec),
+          borderColor: 'rgb(52, 204, 133)',
+          backgroundColor: 'rgba(2, 204, 133, 0.5)',
+          yAxisID: 'y',
+        },
+        {
+          label: 'Maximum time to complete APIs',
+          data: dt.map(data => data?.Max_time_to_complete_api_in_sec),
+          borderColor: 'rgb(232, 99, 16)',
+          backgroundColor: 'rgba(232, 99, 16, 0.5)',
+          yAxisID: 'y',
+        },
       ],
     };
   }

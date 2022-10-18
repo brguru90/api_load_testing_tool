@@ -14,7 +14,7 @@ const chart_option = {
     legend: {
         offsetX: -20,
         formatter: function(val, opts) {
-            return val + " - " + opts.w.globals.series[opts.seriesIndex]+"ms"
+            return val + " - " + opts.w.globals.series[opts.seriesIndex]+" Sec"
         }
     },
     dataLabels:{
@@ -25,7 +25,7 @@ const chart_option = {
             colors: undefined
         },
         formatter: function(val, opts) {
-            return  opts.w.globals.series[opts.seriesIndex]+" ms"
+            return  opts.w.globals.series[opts.seriesIndex]+" Sec"
         }
     },
     title: {

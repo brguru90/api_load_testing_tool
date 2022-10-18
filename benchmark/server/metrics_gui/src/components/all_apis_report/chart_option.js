@@ -24,7 +24,6 @@ const chart_option = {
         tooltip: {
             callbacks: {
                 label: function (context, ...r) {
-                    console.log("context.dataset.label", context)
                     let label = context.dataset.label || "";
                     let val = Number(context.parsed.y) || 0;
                     if (val < 1) {
