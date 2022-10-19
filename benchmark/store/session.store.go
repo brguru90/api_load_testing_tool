@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -15,6 +16,7 @@ var req_sessions_q = make(chan RequestSideSession,1000000)
 var watching_req_sessions_q = false
 
 func RequestSideSession_AppendFromQ() {
+	fmt.Println("RequestSideSession_AppendFromQ")
 	watching_req_sessions_q = true
 	go func() {
 		for rs := range req_sessions_q {
@@ -32,7 +34,7 @@ func GetSessionsRefs() *[]RequestSideSession {
 }
 
 func GetSessionsCount() int{
-	return len(req_sessions)
+	return len(req_sessions)+len(req_sessions_q)
 }
 
 func ResetSessions() {
@@ -44,7 +46,7 @@ func AppendCSession(req_session RequestSideSession) {
 		RequestSideSession_AppendFromQ()
 	}
 	req_sessions_q <- req_session
-	req_sessions = append(req_sessions, req_session)
+	// req_sessions = append(req_sessions, req_session)
 }
 
 func PopSession() RequestSideSession {

@@ -3,8 +3,6 @@
 go build -v -o ./benchmark.bin && ./benchmark.bin
 
 
-* need to calculate request/second separately instead of Average API response time basis, it will give wrong value   
- Ex: if Avg_time_to_complete_api_in_sec is 6.3025 Seconds
 * auto open web view after server up instead of timeout
 * currently sessions & other store are a single variable,
     better to provide it as object, if user need to same store parallely else where then they can use new object 

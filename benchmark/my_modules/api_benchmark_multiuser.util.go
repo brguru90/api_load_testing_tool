@@ -238,12 +238,15 @@ func BenchmarkAPIAsMultiUser(
 				})
 
 				// iterate over elapsed time
-				if track_iteration_time.After(concurrent_req_end_time) {
+				if track_iteration_time.After(concurrent_req_end_time) || track_iteration_time.Equal(concurrent_req_end_time) {
 					break
 				}
-
 				prev_iteration_time = track_iteration_time
-				track_iteration_time = track_iteration_time.Add(time.Second * 1)
+				if track_iteration_time.Add(time.Second * 1).After(concurrent_req_end_time){
+					track_iteration_time=concurrent_req_end_time
+				} else{
+					track_iteration_time = track_iteration_time.Add(time.Second * 1)
+				}
 			}
 		}
 

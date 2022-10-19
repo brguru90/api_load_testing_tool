@@ -3,50 +3,50 @@ package api_requests
 import (
 	"apis_load_test/benchmark/my_modules"
 	"apis_load_test/benchmark/store"
-	"database/sql"
-	"encoding/json"
+	// "database/sql"
+	// "encoding/json"
 	"fmt"
 	"net/http"
 
 	_ "github.com/lib/pq"
 )
 
-func getUserCredentialFromDB(_limit int64) []string {
+// func getUserCredentialFromDB(_limit int64) []string {
 
-	all_users_email := []string{}
+// 	all_users_email := []string{}
 
-	const (
-		host     = "localhost"
-		port     = 5432
-		user     = "guru"
-		password = "guru"
-		dbname   = "jwt5"
-	)
+// 	const (
+// 		host     = "localhost"
+// 		port     = 5432
+// 		user     = "guru"
+// 		password = "guru"
+// 		dbname   = "jwt5"
+// 	)
 
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+// 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
-	db, err := sql.Open("postgres", psqlconn)
-	my_modules.CheckError(err)
-	defer db.Close()
+// 	db, err := sql.Open("postgres", psqlconn)
+// 	my_modules.CheckError(err)
+// 	defer db.Close()
 
-	err = db.Ping()
-	my_modules.CheckError(err)
+// 	err = db.Ping()
+// 	my_modules.CheckError(err)
 
-	rows, err := db.Query(fmt.Sprintf(`SELECT "email" FROM "users" LIMIT %d;`, _limit))
-	my_modules.CheckError(err)
-	defer rows.Close()
+// 	rows, err := db.Query(fmt.Sprintf(`SELECT "email" FROM "users" LIMIT %d;`, _limit))
+// 	my_modules.CheckError(err)
+// 	defer rows.Close()
 
-	for rows.Next() {
-		var email string
-		err = rows.Scan(&email)
-		my_modules.CheckError(err)
+// 	for rows.Next() {
+// 		var email string
+// 		err = rows.Scan(&email)
+// 		my_modules.CheckError(err)
 
-		all_users_email = append(all_users_email, email)
-	}
-	my_modules.CheckError(err)
+// 		all_users_email = append(all_users_email, email)
+// 	}
+// 	my_modules.CheckError(err)
 
-	return all_users_email
-}
+// 	return all_users_email
+// }
 
 type Users struct {
 	Users []map[string]interface{} `json:"users"`
@@ -57,21 +57,21 @@ type ResponseType struct {
 	Data   Users  `json:"data"`
 }
 
-func getUserCredentialFromAPI(_limit int64) []string {
+// func getUserCredentialFromAPI(_limit int64) []string {
 
-	all_users_email := []string{}
-	resp, err := http.Get("http://localhost:8000/api/all_users/")
-	my_modules.CheckError(err)
-	var json_body ResponseType
-	// json_body := make(map[string]interface{})
-	json.NewDecoder(resp.Body).Decode(&json_body)
+// 	all_users_email := []string{}
+// 	resp, err := http.Get("http://localhost:8000/api/all_users/")
+// 	my_modules.CheckError(err)
+// 	var json_body ResponseType
+// 	// json_body := make(map[string]interface{})
+// 	json.NewDecoder(resp.Body).Decode(&json_body)
 
-	for _, user := range json_body.Data.Users {
-		all_users_email = append(all_users_email, user["email"].(string))
-	}
+// 	for _, user := range json_body.Data.Users {
+// 		all_users_email = append(all_users_email, user["email"].(string))
+// 	}
 
-	return all_users_email
-}
+// 	return all_users_email
+// }
 
 func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 
