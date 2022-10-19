@@ -6,7 +6,7 @@ go build -v -o ./benchmark.bin && ./benchmark.bin
 * auto open web view after server up instead of timeout
 * currently sessions & other store are a single variable,
     better to provide it as object, if user need to same store parallely else where then they can use new object 
-
+* bechmark call should accept a name or tittle & same should be returned to the metric dump & response
 
 * try, to create benchmark runner client & to make a decentralized client, so we can achive unique IP address
 benchmark server should distribute/assign size & time of API call(could be real time or planned) to the benchmark runner client

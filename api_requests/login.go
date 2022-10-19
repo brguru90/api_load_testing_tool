@@ -85,13 +85,13 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	// 	panic("user emails are empty")
 	// }
 
-	fmt.Printf("len of cred ==> %v\n", len(*store.LoginCredential_GetAll()))
+	fmt.Printf("len of cred ==> %v\n", len(*signup_credentials.LoginCredential_GetAll()))
 
 	payload_generator_callback := func(current_iteration int64) map[string]interface{} {
-		if len(*store.LoginCredential_GetAll())>int(current_iteration % concurrent_req){
+		if len(*signup_credentials.LoginCredential_GetAll())>int(current_iteration % concurrent_req){
 			return map[string]interface{}{
 				// "email": all_users_email[current_iteration],
-				"email": store.LoginCredential_Get(current_iteration % concurrent_req).Email,
+				"email": signup_credentials.LoginCredential_Get(current_iteration % concurrent_req).Email,
 			}			
 		}
 		return map[string]interface{}{}
@@ -121,6 +121,7 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 
 	fmt.Println("bench mark on api finished")
 
+	signup_credentials.Dispose()
 	store.RequestSideSession_WaitForAppend()
 	fmt.Printf("total collected cookies %d\n", store.GetSessionsCount())
 	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())

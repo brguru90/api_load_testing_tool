@@ -4,47 +4,67 @@ import (
 	"time"
 )
 
-type LoginCredential struct {
+type LoginCredentialStruct struct {
 	Name  string
 	Email string
 }
 
-var login_credential []LoginCredential = []LoginCredential{}
-var login_credential_q = make(chan LoginCredential,1000000)
-var watching_login_credential_q = false
+type LoginCredential struct{
+	login_credential []LoginCredentialStruct
+	login_credential_q chan LoginCredentialStruct
+	watching_login_credential_q bool
+}
 
-func LoginCredential_AppendFromQ() {
-	watching_login_credential_q = true
+// var login_credential []LoginCredentialStruct = []LoginCredentialStruct{}
+// var login_credential_q = make(chan LoginCredentialStruct,1000000)
+// var watching_login_credential_q = false
+
+func NewLoginCredential(buffer_size int64) LoginCredential{
+	return LoginCredential{
+		login_credential:[]LoginCredentialStruct{},
+		login_credential_q:make(chan LoginCredentialStruct,buffer_size),
+		watching_login_credential_q:false,
+	}
+}
+
+func (e *LoginCredential) LoginCredential_AppendFromQ() {
+	e.watching_login_credential_q = true
 	go func() {
-		for lc := range login_credential_q {
-			login_credential = append(login_credential, lc)
+		for lc := range e.login_credential_q {
+			e.login_credential = append(e.login_credential, lc)
 		}
 	}()
 }
 
-func LoginCredential_Append(lc LoginCredential) {
-	if !watching_login_credential_q {
-		LoginCredential_AppendFromQ()
+func (e *LoginCredential) LoginCredential_Append(lc LoginCredentialStruct) {
+	if !e.watching_login_credential_q {
+		e.LoginCredential_AppendFromQ()
 	}
-	login_credential_q <- lc
+	e.login_credential_q <- lc
 }
 
-func LoginCredential_Reset(lc LoginCredential) {
-	login_credential = []LoginCredential{}
+func (e *LoginCredential) LoginCredential_Reset(lc LoginCredentialStruct) {
+	e.login_credential = []LoginCredentialStruct{}
 }
 
-func LoginCredential_Get(index int64) LoginCredential {
-	return login_credential[index]
+func (e *LoginCredential) LoginCredential_Get(index int64) LoginCredentialStruct {
+	return e.login_credential[index]
 }
-func LoginCredential_GetAll() *[]LoginCredential {
-	return &login_credential
+func (e *LoginCredential) LoginCredential_GetAll() *[]LoginCredentialStruct {
+	return &(e.login_credential)
 }
 
-func LoginCredential_WaitForAppend() {
+func (e *LoginCredential) LoginCredential_WaitForAppend() {
 	for {
-		if len(login_credential_q) == 0 {
+		if len(e.login_credential_q) == 0 {
 			break
 		}
 		time.Sleep(time.Second * 1)
 	}
+}
+
+func  (e *LoginCredential)  Dispose(){
+	close(e.login_credential_q)
+	e.login_credential_q=nil
+	e.login_credential=[]LoginCredentialStruct{}
 }

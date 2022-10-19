@@ -7,6 +7,8 @@ import (
 	// "encoding/json"
 )
 
+var signup_credentials store.LoginCredential
+
 func SignUp(total_req int64, concurrent_req int64) interface{} {
 
 	_url := "http://localhost:8000/api/sign_up/"
@@ -20,14 +22,14 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 		"Content-Type": "application/json",
 	}
 	// iteration_data,all_data := my_modules.BenchmarkAPI(10,2,_url, "post", headers, payload_obj,nil)
-
+	signup_credentials=store.NewLoginCredential(concurrent_req)
 	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "post", headers, nil, func(uid int64) map[string]interface{} {
 		signup_payload := map[string]interface{}{
 			"email":       my_modules.RandomString(100) + "@gmail.com",
 			"name":        my_modules.RandomString(20),
 			"description": my_modules.RandomString(100),
 		}
-		store.LoginCredential_Append(store.LoginCredential{
+		signup_credentials.LoginCredential_Append(store.LoginCredentialStruct{
 			Name:  signup_payload["name"].(string),
 			Email: signup_payload["email"].(string),
 		})
@@ -43,7 +45,7 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 	// })
 
 	fmt.Println("bench mark on api finished")
-	store.LoginCredential_WaitForAppend()
+	signup_credentials.LoginCredential_WaitForAppend()
 
 	result := make(map[string]interface{})
 	result[_url] = map[string]interface{}{
