@@ -37,7 +37,7 @@ export default function APIMetricsOverview({ APIindex, url }) {
               <th>Average API response time:</th>
               <td>
                 {overview_data?.Avg_time_to_complete_api_in_sec || "-"} Seconds
-                ({Math.round(1 / overview_data?.Avg_time_to_complete_api_in_sec) || "-"} Req/Sec)
+                ({Math.round((1 / overview_data?.Avg_time_to_complete_api_in_sec)*overview_data?.Concurrent_request) || "-"} Req/Sec)
               </td>
             </tr>
             <tr>
