@@ -12,8 +12,6 @@ type LoginCredentialStruct struct {
 	Email string
 }
 
-
-
 var signup_credentials store.CredentialStore[LoginCredentialStruct]
 
 func SignUp(total_req int64, concurrent_req int64) interface{} {

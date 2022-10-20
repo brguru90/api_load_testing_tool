@@ -34,12 +34,14 @@ func Metrics(c *gin.Context) {
 			if err == nil {
 				M.Broadcast([]byte(result))
 				if my_modules.BenchMarkEnded{
+					store.BenchmarkDataStore_CloseQ()
 					M.Close()
 					return
 				}
 			}
 			t2 := func(data interface{}) {
 				if data==nil{
+					store.BenchmarkDataStore_CloseQ()
 					M.Close()
 					return
 				}
