@@ -27,7 +27,7 @@ func Metrics(c *gin.Context) {
 	M.HandleConnect(func(s *melody.Session) {
 		fmt.Println("on Connect")
 		go func() {
-			temp_data, info := store.GeneralStore_GetAllWithInfo()
+			temp_data, info := store.BenchmarkDataStore_GetAllWithInfo()
 			_temp_data, _info := *temp_data, *info
 
 			result, err := json.MarshalIndent(_temp_data, "", "  ")

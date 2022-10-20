@@ -3,75 +3,16 @@ package api_requests
 import (
 	"apis_load_test/benchmark/my_modules"
 	"apis_load_test/benchmark/store"
-	// "database/sql"
-	// "encoding/json"
 	"fmt"
 	"net/http"
 
 	_ "github.com/lib/pq"
 )
-
-// func getUserCredentialFromDB(_limit int64) []string {
-
-// 	all_users_email := []string{}
-
-// 	const (
-// 		host     = "localhost"
-// 		port     = 5432
-// 		user     = "guru"
-// 		password = "guru"
-// 		dbname   = "jwt5"
-// 	)
-
-// 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-
-// 	db, err := sql.Open("postgres", psqlconn)
-// 	my_modules.CheckError(err)
-// 	defer db.Close()
-
-// 	err = db.Ping()
-// 	my_modules.CheckError(err)
-
-// 	rows, err := db.Query(fmt.Sprintf(`SELECT "email" FROM "users" LIMIT %d;`, _limit))
-// 	my_modules.CheckError(err)
-// 	defer rows.Close()
-
-// 	for rows.Next() {
-// 		var email string
-// 		err = rows.Scan(&email)
-// 		my_modules.CheckError(err)
-
-// 		all_users_email = append(all_users_email, email)
-// 	}
-// 	my_modules.CheckError(err)
-
-// 	return all_users_email
-// }
-
-type Users struct {
-	Users []map[string]interface{} `json:"users"`
-}
-type ResponseType struct {
-	Status string `json:"status"`
-	Msg    string `json:"msg"`
-	Data   Users  `json:"data"`
-}
-
-// func getUserCredentialFromAPI(_limit int64) []string {
-
-// 	all_users_email := []string{}
-// 	resp, err := http.Get("http://localhost:8000/api/all_users/")
-// 	my_modules.CheckError(err)
-// 	var json_body ResponseType
-// 	// json_body := make(map[string]interface{})
-// 	json.NewDecoder(resp.Body).Decode(&json_body)
-
-// 	for _, user := range json_body.Data.Users {
-// 		all_users_email = append(all_users_email, user["email"].(string))
-// 	}
-
-// 	return all_users_email
-// }
+type RequestSideSession struct {
+	Cookies    []*http.Cookie
+	CSRF_token string
+}  
+var RequestSession store.CredentialStore[RequestSideSession]
 
 func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 
@@ -80,18 +21,14 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 		"Content-Type": "application/json",
 	}
 
-	// all_users_email := getUserCredentialFromAPI(concurrent_req)
-	// if len(all_users_email) == 0 {
-	// 	panic("user emails are empty")
-	// }
+	RequestSession=RequestSession.NewCredentialStore(concurrent_req)
 
-	fmt.Printf("len of cred ==> %v\n", len(*signup_credentials.LoginCredential_GetAll()))
+	fmt.Printf("len of cred ==> %v\n", len(*signup_credentials.CredentialStore_GetAllRefs()))
 
 	payload_generator_callback := func(current_iteration int64) map[string]interface{} {
-		if len(*signup_credentials.LoginCredential_GetAll())>int(current_iteration % concurrent_req){
+		if len(*signup_credentials.CredentialStore_GetAllRefs())>int(current_iteration % concurrent_req){
 			return map[string]interface{}{
-				// "email": all_users_email[current_iteration],
-				"email": signup_credentials.LoginCredential_Get(current_iteration % concurrent_req).Email,
+				"email": signup_credentials.CredentialStore_Get(current_iteration % concurrent_req).Email,
 			}			
 		}
 		return map[string]interface{}{}
@@ -104,15 +41,14 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	response_interceptor := func(resp *http.Response, uid int64) {
 		// fmt.Printf("response interceptor uid--> %v\n", uid)
 
-		user_data := store.RequestSideSession{
+		user_data := RequestSideSession{
 			CSRF_token: resp.Header.Get("csrf_token"),
 		}
 
 		if len(resp.Cookies()) > 0 {
-			// condition check may not work all time since data is pushed concurrently`
-			if int64(store.GetSessionsCount()) < concurrent_req && uid < concurrent_req {
+			if int64(RequestSession.CredentialStore_GetCount()) < concurrent_req && uid < concurrent_req {
 				user_data.Cookies = resp.Cookies()
-				store.AppendCSession(user_data)
+				RequestSession.CredentialStore_Append(user_data)
 			}
 		}
 	}
@@ -122,8 +58,9 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 	fmt.Println("bench mark on api finished")
 
 	signup_credentials.Dispose()
-	store.RequestSideSession_WaitForAppend()
-	fmt.Printf("total collected cookies %d\n", store.GetSessionsCount())
+	RequestSession.CredentialStore_WaitForAppend()
+	RequestSession.CloseQ()
+	fmt.Printf("total collected cookies %d\n", RequestSession.CredentialStore_GetCount())
 	// fmt.Printf("collected cookies %v\n", *store.GetSessionsRefs())
 
 	result := make(map[string]interface{})

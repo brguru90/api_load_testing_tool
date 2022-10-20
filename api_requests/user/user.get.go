@@ -1,8 +1,8 @@
 package user
 
 import (
+	"apis_load_test/api_requests"
 	"apis_load_test/benchmark/my_modules"
-	"apis_load_test/benchmark/store"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -19,13 +19,13 @@ func GetUserDetailAsMultiUser(_url string, total_req int64, concurrent_req int64
 	request_interceptor := func(req *http.Request, uid int64) {
 		// fmt.Printf("request interceptor uid--> %v\n", uid)
 
-		if len(*store.GetSessionsRefs()) <= int(uid%concurrent_req){
+		if len(*api_requests.RequestSession.CredentialStore_GetAllRefs()) <= int(uid%concurrent_req){
 			return 
 		}
 
-		req.Header.Add("csrf_token", (*store.GetSessionsRefs())[uid%concurrent_req].CSRF_token)
+		req.Header.Add("csrf_token", (*api_requests.RequestSession.CredentialStore_GetAllRefs())[uid%concurrent_req].CSRF_token)
 
-		for _, cookie := range (*store.GetSessionsRefs())[uid%concurrent_req].Cookies {
+		for _, cookie := range (*api_requests.RequestSession.CredentialStore_GetAllRefs())[uid%concurrent_req].Cookies {
 			req.AddCookie(cookie)
 		}
 

@@ -31,7 +31,7 @@ func pushBenchMarkMetrics(data interface{}) {
 		Data:      data,
 		UpdatedAt: t,
 	})
-	store.GeneralStore_Append(data, t)
+	store.BenchmarkDataStore_Append(data, t)
 }
 
 var BenchMarkEnded bool =false
@@ -359,5 +359,5 @@ func InitBeforeBenchMarkStart() {
 		}
 		return data
 	}
-	store.GeneralStore_ManualAppendFromQ(&f)
+	store.BenchmarkDataStore_ManualAppendFromQ(&f)
 }

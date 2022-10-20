@@ -4,67 +4,83 @@ import (
 	"time"
 )
 
-type LoginCredentialStruct struct {
-	Name  string
-	Email string
+type CredentialStore[T any] struct{
+	store_data []T
+	store_data_q chan T
+	watching_store_q bool
 }
 
-type LoginCredential struct{
-	login_credential []LoginCredentialStruct
-	login_credential_q chan LoginCredentialStruct
-	watching_login_credential_q bool
-}
-
-// var login_credential []LoginCredentialStruct = []LoginCredentialStruct{}
-// var login_credential_q = make(chan LoginCredentialStruct,1000000)
-// var watching_login_credential_q = false
-
-func NewLoginCredential(buffer_size int64) LoginCredential{
-	return LoginCredential{
-		login_credential:[]LoginCredentialStruct{},
-		login_credential_q:make(chan LoginCredentialStruct,buffer_size),
-		watching_login_credential_q:false,
+func (CredentialStore[T]) NewCredentialStore(buffer_size int64) CredentialStore[T]{
+	return CredentialStore[T]{
+		store_data:[]T{},
+		store_data_q:make(chan T,buffer_size),
+		watching_store_q:false,
 	}
 }
 
-func (e *LoginCredential) LoginCredential_AppendFromQ() {
-	e.watching_login_credential_q = true
+func (e *CredentialStore[T]) CredentialStore_AppendFromQ() {
+	e.watching_store_q = true
 	go func() {
-		for lc := range e.login_credential_q {
-			e.login_credential = append(e.login_credential, lc)
+		for lc := range e.store_data_q {
+			e.store_data = append(e.store_data, lc)
 		}
 	}()
 }
 
-func (e *LoginCredential) LoginCredential_Append(lc LoginCredentialStruct) {
-	if !e.watching_login_credential_q {
-		e.LoginCredential_AppendFromQ()
+func (e *CredentialStore[T]) CredentialStore_Append(lc T) {
+	if !e.watching_store_q {
+		e.CredentialStore_AppendFromQ()
 	}
-	e.login_credential_q <- lc
+	e.store_data_q <- lc
 }
 
-func (e *LoginCredential) LoginCredential_Reset(lc LoginCredentialStruct) {
-	e.login_credential = []LoginCredentialStruct{}
+func (e *CredentialStore[T]) CredentialStore_Reset(lc T) {
+	e.store_data = []T{}
 }
 
-func (e *LoginCredential) LoginCredential_Get(index int64) LoginCredentialStruct {
-	return e.login_credential[index]
+func (e *CredentialStore[T]) CredentialStore_Get(index int64) T {
+	return e.store_data[index]
 }
-func (e *LoginCredential) LoginCredential_GetAll() *[]LoginCredentialStruct {
-	return &(e.login_credential)
+func (e *CredentialStore[T]) CredentialStore_GetAll() []T {
+	return (e.store_data)
 }
 
-func (e *LoginCredential) LoginCredential_WaitForAppend() {
+func (e *CredentialStore[T]) CredentialStore_GetAllRefs() *[]T {
+	return &(e.store_data)
+}
+
+func (e *CredentialStore[T]) CredentialStore_GetQRefs() *chan T{
+	return &e.store_data_q
+}
+
+func (e *CredentialStore[T]) CredentialStore_GetCount() int{
+	return len(e.store_data)+len(e.store_data_q)
+}
+
+func (e *CredentialStore[T]) CredentialStore_Pop() []T{
+	for ;len(e.store_data_q)<=0;{}
+	e.store_data=e.store_data[:len(e.store_data)-1]
+	return e.store_data
+}
+
+func (e *CredentialStore[T]) CredentialStore_WaitForAppend() {
 	for {
-		if len(e.login_credential_q) == 0 {
+		if len(e.store_data_q) == 0 {
 			break
 		}
 		time.Sleep(time.Second * 1)
 	}
 }
 
-func  (e *LoginCredential)  Dispose(){
-	close(e.login_credential_q)
-	e.login_credential_q=nil
-	e.login_credential=[]LoginCredentialStruct{}
+func  (e *CredentialStore[T])  CloseQ(){
+	close(e.store_data_q)
+	e.store_data_q=nil
 }
+
+func  (e *CredentialStore[T])  Dispose(){
+	close(e.store_data_q)
+	e.store_data_q=nil
+	e.store_data=[]T{}
+}
+
+
