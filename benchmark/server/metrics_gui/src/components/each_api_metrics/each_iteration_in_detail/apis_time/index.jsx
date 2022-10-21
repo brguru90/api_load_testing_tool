@@ -83,7 +83,7 @@ export default function APITimes({ iteration }) {
       }, ...iteration.Benchmark_per_second_metric].slice(start_index, start_index + max_items))
 
     }
-    return []
+    return structure_data([])
 
   }, [iteration?.Benchmark_per_second_metric?.length,pagination, max_items])
 

@@ -40,7 +40,7 @@ export default function StatusCodePieChart({ APIindex }) {
   _chart_option.labels = Object.keys(status_code_coverage || {})
   _chart_option.fill = {
     colors: Object.keys(status_code_coverage || {}).map(val => {
-      return color[String(val)[0] + "xx"]
+      return color[String(val)[0] + "xx"] || 'rgb(26, 25, 25)'
     })
   }
 
