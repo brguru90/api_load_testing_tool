@@ -3,17 +3,39 @@ package benchmark
 import (
 	"apis_load_test/benchmark/my_modules"
 	"apis_load_test/benchmark/server"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"runtime/pprof"
+	"syscall"
 )
 
 func RunBenchmark(callback func()) {
 
 	var gin_mode string = os.Getenv("GIN_MODE")
+	var enable_profiling bool = os.Getenv("PROFILING")=="true"
 
-	if gin_mode != "release" {
+	var memprof *os.File=nil
+	var memErr error
+	sigs := make(chan os.Signal, 1)
+
+	if enable_profiling{
+		signal.Notify(sigs, syscall.SIGINT)
+		memprof, memErr = os.Create("mem.pprof")
+		go func() {
+			select {
+			case sig := <-sigs:			
+				fmt.Printf("Got %s signal. Collecting profile data\n", sig)	
+				if memprof!=nil && memErr==nil{
+					pprof.WriteHeapProfile(memprof)
+					memprof.Close()
+				}
+				os.Exit(1)
+			}
+		}()
+
 		go func() {
 			http.ListenAndServe("localhost:7777", nil)
 			// http://localhost:7777/debug/pprof/
@@ -21,21 +43,10 @@ func RunBenchmark(callback func()) {
 		}()
 	}
 
-	go func() {
-		my_modules.InitBeforeBenchMarkStart()
-		if gin_mode != "release" {
-			// go tool pprof --http=localhost:8800 /home/guruprasad/Desktop/test_workspace/api_load_testing_tool/__debug_bin /home/guruprasad/Desktop/test_workspace/api_load_testing_tool/mem.pprof
 
-			memprof, err := os.Create("mem.pprof")
-			callback()
-			if err == nil {
-				// also need to collect on ctrl+c signal
-				pprof.WriteHeapProfile(memprof)
-				memprof.Close()
-			}
-		} else{
-			callback()
-		}
+	go func() {
+		my_modules.InitBeforeBenchMarkStart()		
+		callback()
 		my_modules.OnBenchmarkEnd()
 	}()
 	server.RunServer(

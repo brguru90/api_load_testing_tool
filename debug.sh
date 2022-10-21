@@ -1,6 +1,7 @@
 
 export GIN_MODE=debug
 export DISABLE_COLOR=false
+export PROFILING=true
 
 PID_LIST=""
 
@@ -8,7 +9,7 @@ function beforeExit() {
     echo;
     echo "statrting Profiling...";
     trap - SIGINT
-    kill $PID_LIST    
+    kill -s SIGINT $PID_LIST    
     go tool pprof --http=localhost:8800 ./debug.bin ./mem.pprof
     echo "Benchmark Exited";
 }
