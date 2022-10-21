@@ -136,6 +136,7 @@ func BenchmarkAPIAsMultiUser(
 							req: nil,
 							err: nil,
 							payload:nil,
+							request_size: 0,
 						}
 						concurrent_req_wg.Done()	
 					}()
@@ -201,8 +202,10 @@ func BenchmarkAPIAsMultiUser(
 			avg_request_payload_size += float64(additional_detail.request_payload_size)
 			avg_response_payload_size += float64(additional_detail.response_payload_size)
 		}
-		avg_request_payload_size = avg_request_payload_size / float64(len(additional_details_arr))
-		avg_response_payload_size = avg_response_payload_size / float64(len(additional_details_arr))
+		if len(additional_details_arr)>0{
+			avg_request_payload_size = avg_request_payload_size / float64(len(additional_details_arr))
+			avg_response_payload_size = avg_response_payload_size / float64(len(additional_details_arr))
+		}
 
 		// var request_sent_in_sec_avg,request_connected_in_sec_avg,request_processed_in_sec_avg time.Time
 		track_iteration_time := concurrent_req_start_time
