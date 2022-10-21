@@ -73,12 +73,16 @@ func (e *CredentialStore[T]) CredentialStore_WaitForAppend() {
 }
 
 func  (e *CredentialStore[T])  CloseQ(){
-	close(e.store_data_q)
+	if e.store_data_q==nil{
+		close(e.store_data_q)
+	}
 	e.store_data_q=nil
 }
 
 func  (e *CredentialStore[T])  Dispose(){
-	close(e.store_data_q)
+	if e.store_data_q==nil{
+		close(e.store_data_q)
+	}
 	e.store_data_q=nil
 	e.store_data=[]T{}
 }

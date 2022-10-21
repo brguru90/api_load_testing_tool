@@ -29,7 +29,7 @@ func LogToJSON(json_obj interface{}, log_path interface{}) error {
 
 	var _json_bytes []byte
 	var err error
-	if _json_bytes, err = JSONMarshal(json_obj); err != nil {
+	if _json_bytes, err = JSONMarshal(json_obj,true); err != nil {
 		return err
 	}
 

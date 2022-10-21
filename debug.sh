@@ -2,6 +2,7 @@
 export GIN_MODE=debug
 export DISABLE_COLOR=false
 export PROFILING=true
+export CALCULATE_PAYLOAD_SIZE=false
 
 PID_LIST=""
 
@@ -10,6 +11,7 @@ function beforeExit() {
     echo "statrting Profiling...";
     trap - SIGINT
     kill -s SIGINT $PID_LIST    
+    sleep 2
     go tool pprof --http=localhost:8800 ./debug.bin ./mem.pprof
     echo "Benchmark Exited";
 }
@@ -20,6 +22,9 @@ go build -v -o ./debug.bin
 ./debug.bin &
 
 PID_LIST+=" $!";
+
+echo "execution started, press ctrl+c to end execution & view profiling data"
+
 echo "PIDs=$PID_LIST"
 trap beforeExit SIGINT
 wait $PID_LIST

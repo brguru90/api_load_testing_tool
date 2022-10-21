@@ -1,7 +1,6 @@
 package my_modules
 
 import (
-	"net/http"
 	"time"
 )
 
@@ -11,7 +10,6 @@ import (
 type MessageType struct {
 	Data                 APIData
 	Time_to_complete_api int64
-	Res                  *http.Response
 	Err                  error
 }
 

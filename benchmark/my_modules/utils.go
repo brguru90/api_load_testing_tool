@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"net/http/httputil"
@@ -14,6 +13,8 @@ import (
 )
 
 var HTTPTimeout = time.Minute * 5
+
+var ShouldDumpRequestAndResponse bool = false
 
 type ContextData struct {
 	status_code     int
@@ -55,11 +56,13 @@ func RandomString(size int) string {
 	return ""
 }
 
-func JSONMarshal(t interface{}) ([]byte, error) {
+func JSONMarshal(t interface{},indent bool) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", " ")
+	if indent{
+		encoder.SetIndent("", " ")
+	}
 	err := encoder.Encode(t)
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
@@ -75,7 +78,7 @@ func CreateAPIRequest(
 
 	method = strings.ToUpper(method)
 
-	payload, err := JSONMarshal(payload_obj)
+	payload, err := JSONMarshal(payload_obj,false)
 
 	var req *http.Request
 	switch method {
@@ -108,9 +111,11 @@ func CreateAPIRequest(
 
 	var request_size int = 0
 
-	reqDump, err := httputil.DumpRequestOut(req, true)
-	if err == nil {
-		request_size = len(reqDump)
+	if ShouldDumpRequestAndResponse {
+		reqDump, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			request_size = len(reqDump)
+		}
 	}
 
 	return CreatedAPIRequestFormat{
@@ -209,9 +214,12 @@ func APIReq(
 	// }
 	// response_size+=len([]byte(response_header_string))
 
-	respDump, err := httputil.DumpResponse(resp, true)
-	if err == nil {
-		response_size = len(respDump)
+	if ShouldDumpRequestAndResponse {
+		respDump, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			response_size = len(respDump)
+			respDump = nil
+		}
 	}
 
 	additional_detail.response_payload_size = response_size
@@ -240,14 +248,14 @@ func APIReq(
 		defer req.Body.Close()
 	}
 
-	json_body := make(map[string]interface{})
-	var body []byte = nil
-	if strings.Contains(resp.Header.Get("Content-Type"), "json") {
-		json.NewDecoder(resp.Body).Decode(&json_body)
-	} else {
-		body, _ = ioutil.ReadAll(resp.Body)
-		json_body = nil
-	}
+	// json_body := make(map[string]interface{})
+	// var body []byte = nil
+	// if strings.Contains(resp.Header.Get("Content-Type"), "json") {
+	// 	json.NewDecoder(resp.Body).Decode(&json_body)
+	// } else {
+	// 	body, _ = ioutil.ReadAll(resp.Body)
+	// 	json_body = nil
+	// }
 
 	return APIData{
 		url:     api_request.url,
@@ -255,8 +263,8 @@ func APIReq(
 		context_data: ContextData{
 			status_code:     resp.StatusCode,
 			payload:         api_request.payload,
-			json_body:       json_body,
-			body:            body,
+			// json_body:       json_body,
+			// body:            body,
 			time:            end_time.Sub(start_time).Milliseconds(),
 			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
 			ttfb:            ttfb.Sub(start_time).Milliseconds(),

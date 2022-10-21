@@ -140,12 +140,11 @@ func BenchmarkAPIAsMultiUser(
 						concurrent_req_wg.Done()	
 					}()
 
-					data, time_to_complete_api, res, err := APIReq(&request_ahead_array[sub_iteration], response_interceptor, additional_details)
+					data, time_to_complete_api, _, err := APIReq(&request_ahead_array[sub_iteration], response_interceptor, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
 						Time_to_complete_api: time_to_complete_api,
-						Res:                  res,
 						Err:                  err,
 					}
 					// fmt.Printf("finish channel\n")

@@ -1,5 +1,6 @@
 log.json
 log2.json
+log*.json
 __debug_bin
 benhmark
 benchmark.bin

@@ -16,6 +16,7 @@ func RunBenchmark(callback func()) {
 
 	var gin_mode string = os.Getenv("GIN_MODE")
 	var enable_profiling bool = os.Getenv("PROFILING")=="true"
+	my_modules.ShouldDumpRequestAndResponse=os.Getenv("CALCULATE_PAYLOAD_SIZE")=="true"
 
 	if enable_profiling{
 		sigs := make(chan os.Signal, 1)

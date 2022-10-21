@@ -73,12 +73,16 @@ func BenchmarkDataStore_WaitForAppend() {
 }
 
 func BenchmarkDataStore_CloseQ(){
-	close(benchmark_data_store_q)
+	if benchmark_data_store_q!=nil{
+		close(benchmark_data_store_q)
+	}
 	benchmark_data_store_q=nil
 }
 
 func BenchmarkDataStore_Dispose(){
-	close(benchmark_data_store_q)
+	if benchmark_data_store_q!=nil{
+		close(benchmark_data_store_q)
+	}
 	benchmark_data_store_q=nil
 	benchmark_data_store = []interface{}{}
 	benchmark_data_store_info = BenchmarkDataStoreInfo{}

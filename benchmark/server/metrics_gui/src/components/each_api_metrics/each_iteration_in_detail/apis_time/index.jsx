@@ -95,6 +95,7 @@ export default function APITimes({ iteration }) {
   return (
     <div className={styles["apis_time"]}>
       <div>
+        <b>Iteration {iteration?.iteration_id+1}</b><br /><br />
         <label>
           Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4, e.target.value))} />
         </label>
