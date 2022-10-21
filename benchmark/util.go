@@ -29,6 +29,7 @@ func RunBenchmark(callback func()) {
 			memprof, err := os.Create("mem.pprof")
 			callback()
 			if err == nil {
+				// also need to collect on ctrl+c signal
 				pprof.WriteHeapProfile(memprof)
 				memprof.Close()
 			}
