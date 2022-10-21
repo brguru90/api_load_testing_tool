@@ -17,13 +17,10 @@ func RunBenchmark(callback func()) {
 	var gin_mode string = os.Getenv("GIN_MODE")
 	var enable_profiling bool = os.Getenv("PROFILING")=="true"
 
-	var memprof *os.File=nil
-	var memErr error
-	sigs := make(chan os.Signal, 1)
-
 	if enable_profiling{
+		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT)
-		memprof, memErr = os.Create("mem.pprof")
+		memprof, memErr := os.Create("mem.pprof")
 		go func() {
 			select {
 			case sig := <-sigs:			
@@ -32,6 +29,7 @@ func RunBenchmark(callback func()) {
 					pprof.WriteHeapProfile(memprof)
 					memprof.Close()
 				}
+				fmt.Printf("Done Collecting profile data\n", sig)	
 				os.Exit(1)
 			}
 		}()
