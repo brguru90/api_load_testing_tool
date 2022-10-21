@@ -127,7 +127,7 @@ func CreateAPIRequest(
 // make http request
 // get the metrics like delay, payload size etc for particular request
 func APIReq(
-	api_request CreatedAPIRequestFormat,
+	api_request *CreatedAPIRequestFormat,
 	response_interceptor func(resp *http.Response, uid int64),
 	additional_detail_chan chan AdditionalAPIDetails,
 ) (APIData, int64, *http.Response, error) {

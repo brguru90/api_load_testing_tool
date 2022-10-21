@@ -4,3 +4,4 @@ __debug_bin
 benhmark
 benchmark.bin
 mem.pprof
+debug.bin

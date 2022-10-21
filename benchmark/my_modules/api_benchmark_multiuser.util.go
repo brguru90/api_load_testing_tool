@@ -131,9 +131,16 @@ func BenchmarkAPIAsMultiUser(
 			for j = 0; j < concurrent_request; j++ {
 				// fmt.Printf("%v-%v\n", i, j)
 				go func(sub_iteration int64) {
-					defer concurrent_req_wg.Done()
+					defer func ()  {
+						request_ahead_array[sub_iteration]=CreatedAPIRequestFormat{
+							req: nil,
+							err: nil,
+							payload:nil,
+						}
+						concurrent_req_wg.Done()	
+					}()
 
-					data, time_to_complete_api, res, err := APIReq(request_ahead_array[sub_iteration], response_interceptor, additional_details)
+					data, time_to_complete_api, res, err := APIReq(&request_ahead_array[sub_iteration], response_interceptor, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					messages <- MessageType{
 						Data:                 data,
