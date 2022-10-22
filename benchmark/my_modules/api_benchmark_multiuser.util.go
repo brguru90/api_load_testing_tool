@@ -207,7 +207,10 @@ func BenchmarkAPIAsMultiUser(
 			avg_response_payload_size = avg_response_payload_size / float64(len(additional_details_arr))
 		}
 
-		// var request_sent_in_sec_avg,request_connected_in_sec_avg,request_processed_in_sec_avg time.Time
+		// concurrent_req_start_time & end time will not be perfectly accurate
+		// better to take
+		// min(additional_detail.request_sent)
+		// max(additional_detail.request_processed)
 		track_iteration_time := concurrent_req_start_time
 		prev_iteration_time := concurrent_req_start_time
 		track_iteration_time = track_iteration_time.Add(time.Second * 1)
@@ -220,6 +223,7 @@ func BenchmarkAPIAsMultiUser(
 				var request_payload_size float64 = 0
 				var response_payload_size float64 = 0
 				for _, additional_detail := range additional_details_arr {
+					
 					if additional_detail.request_sent.After(prev_iteration_time) && additional_detail.request_sent.Before(track_iteration_time) {
 						_request_sent_in_sec++
 						request_payload_size += float64(additional_detail.request_payload_size)

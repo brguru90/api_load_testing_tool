@@ -11,3 +11,17 @@ benchmark server should distribute/assign size & time of API call(could be real 
 & benchmark client should be scalable in a flexible way
 i think testing can be done using docker,
 & can be released as docker image and the code will be mounted to host drive, so user can write api calls,payload etc
+
+
+** Remote bench mark execution
+1.  - run "CreateAPIRequest" on client side
+    - collect all the dynamically generated payloads
+2.  - call the "APIReq" on remote server through gRPC
+    - distribute load on servers, each server should have concurrency/number of benchmark server
+    - collect all the response data
+    - send back to client as gRPC response
+3.  - client loop through all response so it can handle response_interceptor on client side code
+4.  - tool should be able to run as both standalone & also as distributed
+5.  - Response response_interceptor from "APIReq" will be moved outside since "APIReq" should be run independent of client
+6.  - Expected issue,
+    - memory conception will be more since server have to store responses from request & send it back to client
