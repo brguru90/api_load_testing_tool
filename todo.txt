@@ -18,6 +18,21 @@ i think testing can be done using docker,
     - collect all the dynamically generated payloads
 2.  - call the "APIReq" on remote server through gRPC
     - distribute load on servers, each server should have concurrency/number of benchmark server
+    - remote servers each iteration should be controlled by client, since each iteration should be run parallely to achieve total concurrency specified
+    condition: delay from server to client should be <=100ms
+        get time from all server, s1: 6:30:100, s2: 6:30:900, s3: 6:31:900, s4: 9:20:900
+        so all iteration should start from each server with 2 second gap,
+        like start from,  s1:6:32, s2:6:32, s3:6:33, 9:22
+        will think of ms optimization later
+        ex:
+            total concurrency 1000, 4 servers
+            server 1,2,4,5 - concurrency 2500
+            should run as,
+            server 1, iteration 1
+            server 2, iteration 1
+            & same for server 3 & 4 also
+            once 1st iteration finishes,get ACK from all servers,
+            then all server should start next iteration simultaneously
     - collect all the response data
     - send back to client as gRPC response
 3.  - client loop through all response so it can handle response_interceptor on client side code
