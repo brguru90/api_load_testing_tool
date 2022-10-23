@@ -24,8 +24,12 @@ const chart_option = {
         tooltip: {
             callbacks: {
                 label: function (context, ...r) {
+                    console.log("context",context)
                     let label = context.dataset.label || "";
                     let val = Number(context.parsed.y) || 0;
+                    if(context?.dataset?.yAxisID=="y2"){
+                        return label + ": " + val
+                    }
                     if (val < 1) {
                         return  label + ": " + (val * 1000) + " ms"
                     }
