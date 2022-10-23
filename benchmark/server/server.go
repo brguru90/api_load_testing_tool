@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -54,8 +55,14 @@ func RunServer(disable_color bool,gin_mode string) {
 		all_router.Use(gin.Recovery())
 	}
 	
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Println("Error in runtime.Caller")
+	}
+	dirname := filepath.Dir(filename)
+	
 	all_router.Use(cors.Default())
-	all_router.Use(static.Serve("/", static.LocalFile("./benchmark/server/metrics_gui/build", true)))
+	all_router.Use(static.Serve("/", static.LocalFile(dirname+"/metrics_gui/build", true)))
 	{
 		api_router := all_router.Group("/api")
 		apis.InitApis(api_router)
