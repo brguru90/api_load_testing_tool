@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"apis_load_test/benchmark/server/apis"
-	"apis_load_test/benchmark/server/ws"
+	"github.com/brguru90/api_load_testing_tool/benchmark/server/apis"
+	"github.com/brguru90/api_load_testing_tool/benchmark/server/ws"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"

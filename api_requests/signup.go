@@ -1,8 +1,8 @@
 package api_requests
 
 import (
-	"apis_load_test/benchmark/my_modules"
-	"apis_load_test/benchmark/store"
+	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
+	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 	"fmt"
 	// "encoding/json"
 )

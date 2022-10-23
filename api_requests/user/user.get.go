@@ -1,8 +1,8 @@
 package user
 
 import (
-	"apis_load_test/api_requests"
-	"apis_load_test/benchmark/my_modules"
+	"github.com/brguru90/api_load_testing_tool/api_requests"
+	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
 	"fmt"
 	"math/rand"
 	"net/http"

@@ -1,8 +1,8 @@
 package benchmark
 
 import (
-	"apis_load_test/benchmark/my_modules"
-	"apis_load_test/benchmark/server"
+	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
+	"github.com/brguru90/api_load_testing_tool/benchmark/server"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
