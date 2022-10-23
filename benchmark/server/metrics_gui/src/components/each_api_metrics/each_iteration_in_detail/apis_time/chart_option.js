@@ -38,7 +38,11 @@ const chart_option = {
                 display: true,
                 text: 'Iterations',
                 align:"start"
-            }
+            },
+            ticks: {
+                autoSkip: false
+             }
+       
         }
     },
 };

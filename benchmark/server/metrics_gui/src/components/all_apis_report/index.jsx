@@ -77,10 +77,19 @@ export default function AllAPISReport() {
           backgroundColor: 'rgba(232, 99, 16, 0.5)',
           yAxisID: 'y',
         },
+        {
+          label: 'Requests Per Second',
+          data: dt.map(data => {
+            return Math.round((1 / data?.Avg_time_to_complete_api_in_sec)*data?.Concurrent_request) || 0
+          }),
+          borderColor: 'rgb(222, 13, 83)',
+          backgroundColor: 'rgba(222, 13, 83, 0.5)',
+          yAxisID: 'y2',
+        },
+        
       ],
     };
   }
-
 
   const [max_items, set_max_items] = useState(10)
   const [pagination, set_pagination] = useState(0)

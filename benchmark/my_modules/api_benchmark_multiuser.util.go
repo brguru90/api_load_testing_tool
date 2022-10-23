@@ -34,7 +34,7 @@ func pushBenchMarkMetrics(data interface{}) {
 	store.BenchmarkDataStore_Append(data, t)
 }
 
-var BenchMarkEnded bool =false
+var BenchMarkEnded bool = false
 
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
@@ -131,14 +131,14 @@ func BenchmarkAPIAsMultiUser(
 			for j = 0; j < concurrent_request; j++ {
 				// fmt.Printf("%v-%v\n", i, j)
 				go func(sub_iteration int64) {
-					defer func ()  {
-						request_ahead_array[sub_iteration]=CreatedAPIRequestFormat{
-							req: nil,
-							err: nil,
-							payload:nil,
+					defer func() {
+						request_ahead_array[sub_iteration] = CreatedAPIRequestFormat{
+							req:          nil,
+							err:          nil,
+							payload:      nil,
 							request_size: 0,
 						}
-						concurrent_req_wg.Done()	
+						concurrent_req_wg.Done()
 					}()
 
 					data, time_to_complete_api, _, err := APIReq(&request_ahead_array[sub_iteration], response_interceptor, additional_details)
@@ -202,15 +202,32 @@ func BenchmarkAPIAsMultiUser(
 			avg_request_payload_size += float64(additional_detail.request_payload_size)
 			avg_response_payload_size += float64(additional_detail.response_payload_size)
 		}
-		if len(additional_details_arr)>0{
+		if len(additional_details_arr) > 0 {
 			avg_request_payload_size = avg_request_payload_size / float64(len(additional_details_arr))
 			avg_response_payload_size = avg_response_payload_size / float64(len(additional_details_arr))
 		}
 
-		// var request_sent_in_sec_avg,request_connected_in_sec_avg,request_processed_in_sec_avg time.Time
-		track_iteration_time := concurrent_req_start_time
-		prev_iteration_time := concurrent_req_start_time
-		track_iteration_time = track_iteration_time.Add(time.Second * 1)
+		// concurrent_req_start_time & end time will not be perfectly accurate
+		// better to take
+		// min(additional_detail.request_sent)
+		// max(additional_detail.request_processed)
+		track_iteration_start_time := additional_details_arr[0].request_sent
+		track_iteration_end_time := additional_details_arr[0].request_processed
+		for _, val := range additional_details_arr {
+			if val.request_sent.Before(track_iteration_start_time) {
+				track_iteration_start_time = val.request_sent
+			}
+			if val.request_processed.After(track_iteration_end_time) {
+				track_iteration_end_time = val.request_processed
+			}
+		}
+		track_iteration_time := track_iteration_start_time
+		prev_iteration_time := track_iteration_start_time.Add(time.Nanosecond*-1)
+		if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
+			track_iteration_time = track_iteration_end_time
+		} else {
+			track_iteration_time = track_iteration_time.Add(time.Second * 1)
+		}
 		var per_second_metrics []BenchMarkPerSecondCount
 		// var _request_sent_in_sec_avg, _request_connected_in_sec_avg, _request_processed_in_sec_avg int64
 		if len(additional_details_arr) > 0 {
@@ -220,17 +237,18 @@ func BenchmarkAPIAsMultiUser(
 				var request_payload_size float64 = 0
 				var response_payload_size float64 = 0
 				for _, additional_detail := range additional_details_arr {
-					if additional_detail.request_sent.After(prev_iteration_time) && additional_detail.request_sent.Before(track_iteration_time) {
+
+					if additional_detail.request_sent.After(prev_iteration_time) && (additional_detail.request_sent.Equal(track_iteration_time) || additional_detail.request_sent.Before(track_iteration_time)) {
 						_request_sent_in_sec++
 						request_payload_size += float64(additional_detail.request_payload_size)
 					}
-					if additional_detail.request_connected.After(prev_iteration_time) && additional_detail.request_connected.Before(track_iteration_time) {
+					if additional_detail.request_connected.After(prev_iteration_time) && (additional_detail.request_connected.Equal(track_iteration_time) || additional_detail.request_connected.Before(track_iteration_time)) {
 						_request_connected_in_sec++
 					}
-					if additional_detail.request_receives_first_byte.After(prev_iteration_time) && additional_detail.request_receives_first_byte.Before(track_iteration_time) {
+					if additional_detail.request_receives_first_byte.After(prev_iteration_time) && (additional_detail.request_receives_first_byte.Equal(track_iteration_time) || additional_detail.request_receives_first_byte.Before(track_iteration_time)) {
 						_request_received_first_byte_in_sec++
 					}
-					if additional_detail.request_processed.After(prev_iteration_time) && additional_detail.request_processed.Before(track_iteration_time) {
+					if additional_detail.request_processed.After(prev_iteration_time) && (additional_detail.request_processed.Equal(track_iteration_time) || additional_detail.request_processed.Before(track_iteration_time)) {
 						_request_processed_in_sec++
 						response_payload_size += float64(additional_detail.response_payload_size)
 					}
@@ -247,13 +265,13 @@ func BenchmarkAPIAsMultiUser(
 				})
 
 				// iterate over elapsed time
-				if track_iteration_time.After(concurrent_req_end_time) || track_iteration_time.Equal(concurrent_req_end_time) {
+				if track_iteration_time.After(track_iteration_end_time) || track_iteration_time.Equal(track_iteration_end_time) {
 					break
 				}
 				prev_iteration_time = track_iteration_time
-				if track_iteration_time.Add(time.Second * 1).After(concurrent_req_end_time){
-					track_iteration_time=concurrent_req_end_time
-				} else{
+				if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
+					track_iteration_time = track_iteration_end_time
+				} else {
 					track_iteration_time = track_iteration_time.Add(time.Second * 1)
 				}
 			}
@@ -345,7 +363,7 @@ func BenchmarkAPIAsMultiUser(
 func OnBenchmarkEnd() {
 	BenchmarkMetricEvent.Emit(nil)
 	BenchmarkMetricEvent.Dispose()
-	BenchMarkEnded=true
+	BenchMarkEnded = true
 }
 
 func InitBeforeBenchMarkStart() {
