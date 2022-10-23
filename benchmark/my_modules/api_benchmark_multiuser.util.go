@@ -223,7 +223,11 @@ func BenchmarkAPIAsMultiUser(
 		}
 		track_iteration_time := track_iteration_start_time
 		prev_iteration_time := track_iteration_start_time.Add(time.Nanosecond*-1)
-		track_iteration_time = track_iteration_time.Add(time.Second * 1)
+		if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
+			track_iteration_time = track_iteration_end_time
+		} else {
+			track_iteration_time = track_iteration_time.Add(time.Second * 1)
+		}
 		var per_second_metrics []BenchMarkPerSecondCount
 		// var _request_sent_in_sec_avg, _request_connected_in_sec_avg, _request_processed_in_sec_avg int64
 		if len(additional_details_arr) > 0 {
