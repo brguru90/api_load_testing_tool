@@ -1,4 +1,4 @@
-module apis_load_test
+module github.com/brguru90/api_load_testing_tool
 
 go 1.19
 
