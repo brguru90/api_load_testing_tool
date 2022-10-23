@@ -1,8 +1,8 @@
 package my_modules
 
 import (
-	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 	"fmt"
+	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 	"math"
 	"net/http"
 	"sync"
@@ -211,18 +211,23 @@ func BenchmarkAPIAsMultiUser(
 		// better to take
 		// min(additional_detail.request_sent)
 		// max(additional_detail.request_processed)
-		track_iteration_start_time := additional_details_arr[0].request_sent
-		track_iteration_end_time := additional_details_arr[0].request_processed
-		for _, val := range additional_details_arr {
-			if val.request_sent.Before(track_iteration_start_time) {
-				track_iteration_start_time = val.request_sent
-			}
-			if val.request_processed.After(track_iteration_end_time) {
-				track_iteration_end_time = val.request_processed
+		track_iteration_start_time := concurrent_req_start_time
+		track_iteration_end_time := concurrent_req_end_time
+		if len(additional_details_arr)>0 {
+
+			track_iteration_start_time := additional_details_arr[0].request_sent
+			track_iteration_end_time := additional_details_arr[0].request_processed
+			for _, val := range additional_details_arr {
+				if val.request_sent.Before(track_iteration_start_time) {
+					track_iteration_start_time = val.request_sent
+				}
+				if val.request_processed.After(track_iteration_end_time) {
+					track_iteration_end_time = val.request_processed
+				}
 			}
 		}
 		track_iteration_time := track_iteration_start_time
-		prev_iteration_time := track_iteration_start_time.Add(time.Nanosecond*-1)
+		prev_iteration_time := track_iteration_start_time.Add(time.Nanosecond * -1)
 		if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
 			track_iteration_time = track_iteration_end_time
 		} else {
