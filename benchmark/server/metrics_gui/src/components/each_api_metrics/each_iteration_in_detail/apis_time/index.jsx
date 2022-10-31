@@ -95,7 +95,8 @@ export default function APITimes({ iteration }) {
   return (
     <div className={styles["apis_time"]}>
       <div>
-        <b>Iteration {iteration?.iteration_id+1}</b><br /><br />
+        <b>Iteration {iteration?.iteration_id+1}</b><br />
+        {Math.round((1 / (iteration?.Avg_time_to_complete_api_in_millesec/1000))*iteration?.Concurrent_request) || "-"} Req/Sec<br /><br />
         <label>
           Page Size: <input type="number" value={max_items} onChange={e => set_max_items(Math.max(4, e.target.value))} />
         </label>

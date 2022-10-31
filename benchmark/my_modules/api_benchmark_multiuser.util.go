@@ -133,10 +133,7 @@ func BenchmarkAPIAsMultiUser(
 			additional_details := &(all_iteration_data[i].additional_details)
 			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
-
-			// run whole parallel request routine in background
-			// so that i can loop through channel data later
-			// spin up all request parallally & wait for all those to finish
+			
 			concurrent_req_wg.Add(int(concurrent_request))
 			// todo:
 			// here benchmark server will distribute request to runner client
