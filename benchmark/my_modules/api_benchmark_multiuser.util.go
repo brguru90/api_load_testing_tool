@@ -80,7 +80,7 @@ func BenchmarkAPIAsMultiUser(
 	}
 
 	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
-	var main_iter, rh_iteration_wg sync.WaitGroup
+	var  rh_iteration_wg sync.WaitGroup
 
 	var i, j int64
 	var iterations_start_time, iterations_end_time time.Time
@@ -126,9 +126,7 @@ func BenchmarkAPIAsMultiUser(
 			additional_details: make(chan AdditionalAPIDetails, concurrent_request),
 		})
 	}
-	main_iter.Add(1)
 	go func() {
-		defer main_iter.Done()
 		iterations_start_time = time.Now()
 		for i = 0; i < number_of_iteration; i++ {
 			messages := &(all_iteration_data[i].messages)
@@ -345,7 +343,6 @@ func BenchmarkAPIAsMultiUser(
 		}(&all_iteration_data[i], int64(i))
 	}
 
-	main_iter.Wait()
 	all_iteration_data_collection_wg.Wait()
 
 	var total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api  int64
