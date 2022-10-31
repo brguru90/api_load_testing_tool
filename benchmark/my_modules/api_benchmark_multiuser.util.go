@@ -168,14 +168,16 @@ func BenchmarkAPIAsMultiUser(
 			}
 			concurrent_req_wg.Wait()
 			// fmt.Println("all the parallel request finished")
-			for ;len(*messages)>0;{
-				time.Sleep(time.Millisecond*100)
-			}
-			close(*messages)
-			for ;len(*additional_details)>0;{
-				time.Sleep(time.Millisecond*100)
-			}
-			close(*additional_details)
+			go func (messages *chan MessageType,additional_details *chan AdditionalAPIDetails)  {
+				for ;len(*messages)>0;{
+					time.Sleep(time.Millisecond*10)
+				}
+				close(*messages)
+				for ;len(*additional_details)>0;{
+					time.Sleep(time.Millisecond*10)
+				}
+				close(*additional_details)				
+			}(messages,additional_details)
 		}
 		iterations_end_time = time.Now()
 	}()
