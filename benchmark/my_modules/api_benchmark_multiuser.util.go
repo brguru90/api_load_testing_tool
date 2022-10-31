@@ -28,6 +28,7 @@ type AllIterationData struct {
 	additional_details        chan AdditionalAPIDetails
 	messages                  chan MessageType
 	concurrent_req_start_time time.Time
+	concurrent_req_end_time time.Time
 }
 
 var BenchmarkMetricEvent = NewCustomEvent("benchmark_event")
@@ -81,7 +82,7 @@ func BenchmarkAPIAsMultiUser(
 	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
 	var main_iter, rh_iteration_wg sync.WaitGroup
 
-	var i, j, total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api, avg_time_to_receive_first_byte_api int64
+	var i, j int64
 	var iterations_start_time, iterations_end_time time.Time
 
 	requests_ahead := make(chan CreatedAPIRequestFormat, number_of_iteration*concurrent_request)
@@ -167,6 +168,8 @@ func BenchmarkAPIAsMultiUser(
 				}((i * concurrent_request) + j)
 			}
 			concurrent_req_wg.Wait()
+			all_iteration_data[i].concurrent_req_end_time=time.Now()
+
 			// fmt.Println("all the parallel request finished")
 			go func (messages *chan MessageType,additional_details *chan AdditionalAPIDetails)  {
 				for ;len(*messages)>0;{
@@ -189,6 +192,8 @@ func BenchmarkAPIAsMultiUser(
 			defer all_iteration_data_collection_wg.Done()
 			messages := &cur_iteration_data.messages
 			additional_details := &cur_iteration_data.additional_details
+
+			var avg_time_to_complete_api, avg_time_to_connect_api, avg_time_to_receive_first_byte_api int64
 
 			avg_time_to_complete_api = 0
 			avg_time_to_connect_api = 0
@@ -215,7 +220,7 @@ func BenchmarkAPIAsMultiUser(
 			}
 
 			concurrent_req_start_time := cur_iteration_data.concurrent_req_start_time
-			concurrent_req_end_time := time.Now()
+			concurrent_req_end_time := cur_iteration_data.concurrent_req_end_time
 
 			avg_time_to_complete_api = avg_time_to_complete_api / concurrent_request
 			avg_time_to_connect_api = avg_time_to_connect_api / concurrent_request
@@ -342,6 +347,8 @@ func BenchmarkAPIAsMultiUser(
 
 	main_iter.Wait()
 	all_iteration_data_collection_wg.Wait()
+
+	var total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api  int64
 
 	avg_time_to_complete_api = 0
 	avg_time_to_connect_api = 0
