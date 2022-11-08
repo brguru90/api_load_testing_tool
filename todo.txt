@@ -20,6 +20,7 @@ i think testing can be done using docker,
     - distribute load on servers, each server should have concurrency/number of benchmark server
     - remote servers each iteration should be controlled by client, since each iteration should be run parallely to achieve total concurrency specified
     condition: delay from server to client should be <=100ms
+        sync the clock before running the benchmark or
         get time from all server, s1: 6:30:100, s2: 6:30:900, s3: 6:31:900, s4: 9:20:900
         so all iteration should start from each server with 2 second gap,
         like start from,  s1:6:32, s2:6:32, s3:6:33, 9:22
