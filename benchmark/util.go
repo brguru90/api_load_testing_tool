@@ -17,7 +17,7 @@ import (
 )
 
 func RunBenchmark(callback func()) {
-	runtime.GOMAXPROCS(runtime.NumCPU()*5)
+	runtime.GOMAXPROCS(runtime.NumCPU()*100)
 
 	var gin_mode string = os.Getenv("GIN_MODE")
 	var enable_profiling bool = os.Getenv("PROFILING") == "true"
