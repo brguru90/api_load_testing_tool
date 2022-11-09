@@ -6,3 +6,4 @@ benhmark
 benchmark.bin
 mem.pprof
 debug.bin
+cpu.pprof

@@ -13,9 +13,10 @@
       "env": {
         "APP_ENV": "development",
         "GIN_MODE":"debug",
-        "DISABLE_COLOR":"false",        
+        "DISABLE_COLOR":"false",  
+        "CALCULATE_PAYLOAD_SIZE":"true"      
       },
-      "args": [" -gcflags=all=\"-N -l\""]
+      "args": [" -gcflags=all=\"-N -l\"", " -race"]
     },    
   ]
 }

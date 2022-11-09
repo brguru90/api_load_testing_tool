@@ -134,11 +134,11 @@ func CreateAPIRequest(
 func APIReq(
 	api_request *CreatedAPIRequestFormat,
 	response_interceptor func(resp *http.Response, uid int64),
-	additional_detail_chan chan AdditionalAPIDetails,
+	additional_detail_chan *chan AdditionalAPIDetails,
 ) (APIData, int64, *http.Response, error) {
-	uid := api_request.uid
+	uid := &api_request.uid
 	additional_detail := AdditionalAPIDetails{
-		request_id: uid,
+		request_id: *uid,
 	}
 
 	if api_request.err != nil {
@@ -153,10 +153,8 @@ func APIReq(
 	}
 
 	start_time := time.Now()
-	var connected_time time.Time = start_time
-	var ttfb time.Time = start_time
-	additional_detail.request_sent = start_time
-	additional_detail.request_payload_size = api_request.request_size
+	var connected_time time.Time
+	var ttfb time.Time
 
 	// https://pkg.go.dev/net/http/httptrace@go1.18.2
 	trace := &httptrace.ClientTrace{
@@ -173,6 +171,8 @@ func APIReq(
 		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
 		// },
 	}
+	additional_detail.request_sent = time.Now()
+	additional_detail.request_payload_size = api_request.request_size
 	req := api_request.req.WithContext(httptrace.WithClientTrace(api_request.req.Context(), trace))
 
 	client := &http.Client{
@@ -196,7 +196,7 @@ func APIReq(
 
 	// end of time difference calculation
 
-	var response_size int = 0
+	// var response_size int = 0
 	// if resp.Body!=nil && resp.ContentLength!=0{
 	// 	var resp_body_copy bytes.Buffer
 	// 	_, io_err := io.Copy(&resp_body_copy, resp.Body)
@@ -214,18 +214,18 @@ func APIReq(
 	// }
 	// response_size+=len([]byte(response_header_string))
 
-	if ShouldDumpRequestAndResponse {
-		respDump, err := httputil.DumpResponse(resp, true)
-		if err == nil {
-			response_size = len(respDump)
-			respDump = nil
-		}
-	}
+	// if ShouldDumpRequestAndResponse {
+	// 	respDump, err := httputil.DumpResponse(resp, true)
+	// 	if err == nil {
+	// 		response_size = len(respDump)
+	// 		respDump = nil
+	// 	}
+	// }
 
-	additional_detail.response_payload_size = response_size
+	// additional_detail.response_payload_size = response_size
 
 	if additional_detail_chan != nil {
-		additional_detail_chan <- additional_detail
+		*additional_detail_chan <- additional_detail
 	}
 
 	if err != nil {
@@ -240,7 +240,7 @@ func APIReq(
 	}
 
 	if response_interceptor != nil {
-		response_interceptor(resp, uid)
+		response_interceptor(resp, *uid)
 	}
 
 	defer resp.Body.Close()

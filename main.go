@@ -12,6 +12,7 @@ func main() {
 	my_modules.LogPath = "./log.json"
 	my_modules.DisableLogging=true
 	benchmark.RunBenchmark(func() {
+		tests.TestTool()
 		tests.TestAsSingleUser()
 		tests.TestAsMultiUser()
 	})

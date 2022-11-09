@@ -3,6 +3,7 @@ export GIN_MODE=debug
 export DISABLE_COLOR=false
 export PROFILING=true
 export CALCULATE_PAYLOAD_SIZE=false
+# export GOGC=off
 
 PID_LIST=""
 
@@ -17,7 +18,7 @@ function beforeExit() {
 }
 
 
-rm -rf ./mem.pprof
+rm -rf ./mem.pprof ./cpu.pprof
 go build -v -o ./debug.bin
 ./debug.bin &
 

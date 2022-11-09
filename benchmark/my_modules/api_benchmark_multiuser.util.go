@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/http/httputil"
+
+	// "runtime"
 	"sync"
 	"time"
 
@@ -28,7 +31,7 @@ type AllIterationData struct {
 	additional_details        chan AdditionalAPIDetails
 	messages                  chan MessageType
 	concurrent_req_start_time time.Time
-	concurrent_req_end_time time.Time
+	concurrent_req_end_time   time.Time
 }
 
 var BenchmarkMetricEvent = NewCustomEvent("benchmark_event")
@@ -80,7 +83,7 @@ func BenchmarkAPIAsMultiUser(
 	}
 
 	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
-	var  rh_iteration_wg sync.WaitGroup
+	var rh_iteration_wg sync.WaitGroup
 
 	var i, j int64
 	var iterations_start_time, iterations_end_time time.Time
@@ -113,18 +116,27 @@ func BenchmarkAPIAsMultiUser(
 	// fmt.Printf("requests_ahead %d<%d\n",len(requests_ahead),number_of_iteration*concurrent_request)
 	close(requests_ahead)
 
-	var request_ahead_array []CreatedAPIRequestFormat
+	// var request_ahead_array []CreatedAPIRequestFormat
+	request_ahead_array := make([]CreatedAPIRequestFormat, len(requests_ahead))
+	ri := 0
 	for request_ahead := range requests_ahead {
-		request_ahead_array = append(request_ahead_array, request_ahead)
+		request_ahead_array[ri] = request_ahead
+		// request_ahead_array = append(request_ahead_array, request_ahead)
+		ri++
 	}
 	requests_ahead = nil
 
-	all_iteration_data := []AllIterationData{}
+	// all_iteration_data := []AllIterationData{}
+	all_iteration_data := make([]AllIterationData, number_of_iteration)
 	for i = 0; i < number_of_iteration; i++ {
-		all_iteration_data = append(all_iteration_data, AllIterationData{
+		all_iteration_data[i] = AllIterationData{
 			messages:           make(chan MessageType),
 			additional_details: make(chan AdditionalAPIDetails, concurrent_request),
-		})
+		}
+		// all_iteration_data = append(all_iteration_data, AllIterationData{
+		// 	messages:           make(chan MessageType),
+		// 	additional_details: make(chan AdditionalAPIDetails, concurrent_request),
+		// })
 	}
 	go func() {
 		iterations_start_time = time.Now()
@@ -133,7 +145,7 @@ func BenchmarkAPIAsMultiUser(
 			additional_details := &(all_iteration_data[i].additional_details)
 			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
-			
+
 			concurrent_req_wg.Add(int(concurrent_request))
 			// todo:
 			// here benchmark server will distribute request to runner client
@@ -152,30 +164,23 @@ func BenchmarkAPIAsMultiUser(
 						concurrent_req_wg.Done()
 					}()
 
-					data, time_to_complete_api, _, err := APIReq(&request_ahead_array[sub_iteration], response_interceptor, *additional_details)
+					data, time_to_complete_api, resp, err := APIReq(&request_ahead_array[sub_iteration], nil, additional_details)
 					// fmt.Printf("finish APIReq\n")
 					*messages <- MessageType{
+						UID:                  request_ahead_array[sub_iteration].uid,
 						Data:                 data,
 						Time_to_complete_api: time_to_complete_api,
 						Err:                  err,
+						Res:                  resp,
 					}
 					// fmt.Printf("finish channel\n")
 				}((i * concurrent_request) + j)
 			}
 			concurrent_req_wg.Wait()
-			all_iteration_data[i].concurrent_req_end_time=time.Now()
+			all_iteration_data[i].concurrent_req_end_time = time.Now()
 
-			// fmt.Println("all the parallel request finished")
-			go func (messages *chan MessageType,additional_details *chan AdditionalAPIDetails)  {
-				for ;len(*messages)>0;{
-					time.Sleep(time.Millisecond*10)
-				}
-				close(*messages)
-				for ;len(*additional_details)>0;{
-					time.Sleep(time.Millisecond*10)
-				}
-				close(*additional_details)				
-			}(messages,additional_details)
+			close(*messages)
+			close(*additional_details)
 		}
 		iterations_end_time = time.Now()
 	}()
@@ -198,7 +203,27 @@ func BenchmarkAPIAsMultiUser(
 			status_codes := make(map[int]int64)
 			// looping through channel data, whenever go routine finishes execution
 			// fmt.Println("loop through msgs")
+
+			var avg_request_payload_size float64 = 0
+			var avg_response_payload_size float64 = 0
+
 			for message := range *messages {
+
+				if response_interceptor != nil {
+					response_interceptor(message.Res, message.UID)
+				}
+
+				response_size := 0
+				if ShouldDumpRequestAndResponse {
+					respDump, err := httputil.DumpResponse(message.Res, true)
+					if err == nil {
+						response_size = len(respDump)
+						respDump = nil
+					}
+				}
+
+				avg_response_payload_size += float64(response_size)
+
 				avg_time_to_complete_api += message.Time_to_complete_api
 				avg_time_to_connect_api += message.Data.context_data.time_to_connect
 				avg_time_to_receive_first_byte_api += message.Data.context_data.ttfb
@@ -226,16 +251,16 @@ func BenchmarkAPIAsMultiUser(
 				status_code_in_percentage[status_code] = (float64(occurrence) / float64(concurrent_request)) * 100
 			}
 
-			var avg_request_payload_size float64 = 0
-			var avg_response_payload_size float64 = 0
 			var additional_details_arr []AdditionalAPIDetails
 			for additional_detail := range *additional_details {
 				additional_details_arr = append(additional_details_arr, additional_detail)
 				avg_request_payload_size += float64(additional_detail.request_payload_size)
-				avg_response_payload_size += float64(additional_detail.response_payload_size)
 			}
-			if len(additional_details_arr) > 0 {
+			if avg_request_payload_size >= 0 {
 				avg_request_payload_size = avg_request_payload_size / float64(len(additional_details_arr))
+			}
+
+			if avg_response_payload_size >= 0 {
 				avg_response_payload_size = avg_response_payload_size / float64(len(additional_details_arr))
 			}
 
@@ -342,7 +367,7 @@ func BenchmarkAPIAsMultiUser(
 
 	all_iteration_data_collection_wg.Wait()
 
-	var total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api  int64
+	var total_time_to_complete_api, avg_time_to_complete_api, avg_time_to_connect_api int64
 
 	avg_time_to_complete_api = 0
 	avg_time_to_connect_api = 0
@@ -397,6 +422,7 @@ func BenchmarkAPIAsMultiUser(
 		ProcessUid:    process_uuid,
 	}
 	pushBenchMarkMetrics(result)
+	// runtime.GC()
 	return &each_iterations_data, &temp_data
 }
 

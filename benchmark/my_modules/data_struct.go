@@ -1,6 +1,7 @@
 package my_modules
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -8,9 +9,11 @@ import (
 // concurrent_request: Number of parallel request per each iteration
 
 type MessageType struct {
+	UID                  int64
 	Data                 APIData
 	Time_to_complete_api int64
 	Err                  error
+	Res                  *http.Response
 }
 
 type BenchmarkData struct {
