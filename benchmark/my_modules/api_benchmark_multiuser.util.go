@@ -47,6 +47,14 @@ func pushBenchMarkMetrics(data interface{}) {
 
 var BenchMarkEnded bool = false
 
+
+type CGlobalAllIterationData struct{
+	all_iteration_data *[]AllIterationData
+	request_ahead_array *[]CreatedAPIRequestFormat
+}
+
+var c_global_all_iteration_data map[string]CGlobalAllIterationData=map[string]CGlobalAllIterationData{}
+
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
 // have the callback to generate payload, intercept request & response
@@ -138,11 +146,16 @@ func BenchmarkAPIAsMultiUser(
 		// 	additional_details: make(chan AdditionalAPIDetails, concurrent_request),
 		// })
 	}
+	c_global_all_iteration_data[process_uuid]=CGlobalAllIterationData{
+		all_iteration_data: &all_iteration_data,
+		request_ahead_array: &request_ahead_array,
+	}
+	
 	go func() {
 		iterations_start_time = time.Now()
 		for i = 0; i < number_of_iteration; i++ {
 			messages := &(all_iteration_data[i].messages)
-			additional_details := &(all_iteration_data[i].additional_details)
+			// additional_details := &(all_iteration_data[i].additional_details)
 			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
 
@@ -164,8 +177,9 @@ func BenchmarkAPIAsMultiUser(
 						concurrent_req_wg.Done()
 					}()
 
-					data, time_to_complete_api, resp, err := APIReq(&request_ahead_array[sub_iteration], nil, additional_details)
+					data, time_to_complete_api, resp, additional_details,err := APIReq(&request_ahead_array[sub_iteration])
 					// fmt.Printf("finish APIReq\n")
+					all_iteration_data[i].additional_details <- additional_details
 					*messages <- MessageType{
 						UID:                  request_ahead_array[sub_iteration].uid,
 						Data:                 data,
@@ -180,7 +194,7 @@ func BenchmarkAPIAsMultiUser(
 			all_iteration_data[i].concurrent_req_end_time = time.Now()
 
 			close(*messages)
-			close(*additional_details)
+			close(all_iteration_data[i].additional_details)
 		}
 		iterations_end_time = time.Now()
 	}()
@@ -221,6 +235,7 @@ func BenchmarkAPIAsMultiUser(
 						respDump = nil
 					}
 				}
+				message.Res.Body.Close()
 
 				avg_response_payload_size += float64(response_size)
 

@@ -56,11 +56,11 @@ func RandomString(size int) string {
 	return ""
 }
 
-func JSONMarshal(t interface{},indent bool) ([]byte, error) {
+func JSONMarshal(t interface{}, indent bool) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)
-	if indent{
+	if indent {
 		encoder.SetIndent("", " ")
 	}
 	err := encoder.Encode(t)
@@ -78,7 +78,7 @@ func CreateAPIRequest(
 
 	method = strings.ToUpper(method)
 
-	payload, err := JSONMarshal(payload_obj,false)
+	payload, err := JSONMarshal(payload_obj, false)
 
 	var req *http.Request
 	switch method {
@@ -133,9 +133,7 @@ func CreateAPIRequest(
 // get the metrics like delay, payload size etc for particular request
 func APIReq(
 	api_request *CreatedAPIRequestFormat,
-	response_interceptor func(resp *http.Response, uid int64),
-	additional_detail_chan *chan AdditionalAPIDetails,
-) (APIData, int64, *http.Response, error) {
+) (APIData, int64, *http.Response, AdditionalAPIDetails, error) {
 	uid := &api_request.uid
 	additional_detail := AdditionalAPIDetails{
 		request_id: *uid,
@@ -149,7 +147,7 @@ func APIReq(
 				status_code: -1,
 				payload:     api_request.payload,
 			},
-		}, 0, nil, api_request.err
+		}, 0, nil, additional_detail, api_request.err
 	}
 
 	start_time := time.Now()
@@ -191,7 +189,7 @@ func APIReq(
 				status_code: -1,
 				payload:     api_request.payload,
 			},
-		}, 0, nil, err
+		}, 0, nil, additional_detail, err
 	}
 
 	// end of time difference calculation
@@ -224,9 +222,9 @@ func APIReq(
 
 	// additional_detail.response_payload_size = response_size
 
-	if additional_detail_chan != nil {
-		*additional_detail_chan <- additional_detail
-	}
+	// if additional_detail_chan != nil {
+	// 	*additional_detail_chan <- additional_detail
+	// }
 
 	if err != nil {
 		return APIData{
@@ -236,14 +234,14 @@ func APIReq(
 				status_code: -1,
 				payload:     api_request.payload,
 			},
-		}, end_time.Sub(start_time).Milliseconds(), nil, err
+		}, end_time.Sub(start_time).Milliseconds(), nil, additional_detail, err
 	}
 
-	if response_interceptor != nil {
-		response_interceptor(resp, *uid)
-	}
+	// if response_interceptor != nil {
+	// 	response_interceptor(resp, *uid)
+	// }
 
-	defer resp.Body.Close()
+	// defer resp.Body.Close()
 	if api_request.payload != nil {
 		defer req.Body.Close()
 	}
@@ -261,15 +259,15 @@ func APIReq(
 		url:     api_request.url,
 		context: "API response",
 		context_data: ContextData{
-			status_code:     resp.StatusCode,
-			payload:         api_request.payload,
+			status_code: resp.StatusCode,
+			payload:     api_request.payload,
 			// json_body:       json_body,
 			// body:            body,
 			time:            end_time.Sub(start_time).Milliseconds(),
 			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
 			ttfb:            ttfb.Sub(start_time).Milliseconds(),
 		},
-	}, end_time.Sub(start_time).Milliseconds(), resp, nil
+	}, end_time.Sub(start_time).Milliseconds(), resp, additional_detail, nil
 
 }
 

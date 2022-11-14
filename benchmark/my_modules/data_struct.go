@@ -8,13 +8,7 @@ import (
 // total_number_of_request: Total number of request
 // concurrent_request: Number of parallel request per each iteration
 
-type MessageType struct {
-	UID                  int64
-	Data                 APIData
-	Time_to_complete_api int64
-	Err                  error
-	Res                  *http.Response
-}
+
 
 type BenchmarkData struct {
 	Url                             string
@@ -52,6 +46,14 @@ type AdditionalAPIDetails struct {
 	request_processed           time.Time
 	request_payload_size        int
 	response_payload_size       int
+}
+
+type MessageType struct {
+	UID int64
+	Data                        APIData
+	Time_to_complete_api        int64
+	Err                         error
+	Res                         *http.Response
 }
 
 type BenchMarkPerSecondCount struct {

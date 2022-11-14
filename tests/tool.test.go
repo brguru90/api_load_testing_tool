@@ -8,8 +8,8 @@ import (
 )
 
 func TestTool() {
-	var total_req int64 = 100000
-	var concurrent_req int64 = 10000
+	var total_req int64 = 10000
+	var concurrent_req int64 = 1000
 
 	_url := "http://localhost:8000/api/test"
 	headers := map[string]string{
