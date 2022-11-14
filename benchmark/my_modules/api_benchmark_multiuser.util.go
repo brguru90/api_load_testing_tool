@@ -47,13 +47,37 @@ func pushBenchMarkMetrics(data interface{}) {
 
 var BenchMarkEnded bool = false
 
-
-type CGlobalAllIterationData struct{
-	all_iteration_data *[]AllIterationData
+type CGlobalAllIterationData struct {
+	all_iteration_data  *[]AllIterationData
 	request_ahead_array *[]CreatedAPIRequestFormat
 }
 
-var c_global_all_iteration_data map[string]CGlobalAllIterationData=map[string]CGlobalAllIterationData{}
+var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
+
+func send_request(main_iteration int64, sub_iteration int64, uuid string) {
+	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	defer func() {
+		(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
+			req:          nil,
+			err:          nil,
+			payload:      nil,
+			request_size: 0,
+		}
+	}()
+
+	data, time_to_complete_api, resp, additional_details, err := APIReq(&(*request_ahead_array)[sub_iteration])
+	// fmt.Printf("finish APIReq\n")
+	(*all_iteration_data)[main_iteration].additional_details <- additional_details
+	(*all_iteration_data)[main_iteration].messages <- MessageType{
+		UID:                  (*request_ahead_array)[sub_iteration].uid,
+		Data:                 data,
+		Time_to_complete_api: time_to_complete_api,
+		Err:                  err,
+		Res:                  resp,
+	}
+	// fmt.Printf("finish channel\n")
+}
 
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
@@ -146,11 +170,11 @@ func BenchmarkAPIAsMultiUser(
 		// 	additional_details: make(chan AdditionalAPIDetails, concurrent_request),
 		// })
 	}
-	c_global_all_iteration_data[process_uuid]=CGlobalAllIterationData{
-		all_iteration_data: &all_iteration_data,
+	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{
+		all_iteration_data:  &all_iteration_data,
 		request_ahead_array: &request_ahead_array,
 	}
-	
+
 	go func() {
 		iterations_start_time = time.Now()
 		for i = 0; i < number_of_iteration; i++ {
@@ -161,34 +185,36 @@ func BenchmarkAPIAsMultiUser(
 
 			concurrent_req_wg.Add(int(concurrent_request))
 			// todo:
-			// here benchmark server will distribute request to runner client
-			// wait for all to complete
-			// & then collect metrics
+			// Need to call concurrent request using c thread
 			for j = 0; j < concurrent_request; j++ {
 				// fmt.Printf("%v-%v\n", i, j)
-				go func(sub_iteration int64) {
-					defer func() {
-						request_ahead_array[sub_iteration] = CreatedAPIRequestFormat{
-							req:          nil,
-							err:          nil,
-							payload:      nil,
-							request_size: 0,
-						}
-						concurrent_req_wg.Done()
-					}()
+				// go func(main_iteration int64,sub_iteration int64) {
+				// 	defer func() {
+				// 		request_ahead_array[sub_iteration] = CreatedAPIRequestFormat{
+				// 			req:          nil,
+				// 			err:          nil,
+				// 			payload:      nil,
+				// 			request_size: 0,
+				// 		}
+				// 		concurrent_req_wg.Done()
+				// 	}()
 
-					data, time_to_complete_api, resp, additional_details,err := APIReq(&request_ahead_array[sub_iteration])
-					// fmt.Printf("finish APIReq\n")
-					all_iteration_data[i].additional_details <- additional_details
-					*messages <- MessageType{
-						UID:                  request_ahead_array[sub_iteration].uid,
-						Data:                 data,
-						Time_to_complete_api: time_to_complete_api,
-						Err:                  err,
-						Res:                  resp,
-					}
-					// fmt.Printf("finish channel\n")
-				}((i * concurrent_request) + j)
+				// 	data, time_to_complete_api, resp, additional_details,err := APIReq(&request_ahead_array[sub_iteration])
+				// 	// fmt.Printf("finish APIReq\n")
+				// 	all_iteration_data[main_iteration].additional_details <- additional_details
+				// 	*messages <- MessageType{
+				// 		UID:                  request_ahead_array[sub_iteration].uid,
+				// 		Data:                 data,
+				// 		Time_to_complete_api: time_to_complete_api,
+				// 		Err:                  err,
+				// 		Res:                  resp,
+				// 	}
+				// 	// fmt.Printf("finish channel\n")
+				// }(i,(i * concurrent_request) + j)
+				go func(_i int64, sub_iteration int64) {
+					send_request(_i, sub_iteration, process_uuid)
+					concurrent_req_wg.Done()
+				}(i, (i*concurrent_request)+j)
 			}
 			concurrent_req_wg.Wait()
 			all_iteration_data[i].concurrent_req_end_time = time.Now()
@@ -438,6 +464,7 @@ func BenchmarkAPIAsMultiUser(
 	}
 	pushBenchMarkMetrics(result)
 	// runtime.GC()
+	c_global_all_iteration_data[process_uuid]=CGlobalAllIterationData{}
 	return &each_iterations_data, &temp_data
 }
 
