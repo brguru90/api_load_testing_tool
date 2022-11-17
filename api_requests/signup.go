@@ -24,7 +24,7 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 
 	payload_generator_callback:=func(uid int64) map[string]interface{} {
 		signup_payload := map[string]interface{}{
-			"email":       my_modules.RandomString(100) + "@gmail.com",
+			"email":       my_modules.RandomString(1000) + "@gmail.com",
 			"name":        my_modules.RandomString(20),
 			"description": my_modules.RandomString(100),
 		}

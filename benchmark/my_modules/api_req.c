@@ -111,6 +111,7 @@ response_data send_raw_request(request_input *req_input, response_data *response
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "cgo benchmark tool");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, req_input->method);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, req_input->time_out_in_sec);
 
         // from response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_writer);

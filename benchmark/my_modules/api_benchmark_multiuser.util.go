@@ -82,11 +82,8 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
 	request_input := make([]C.struct_SingleRequestInput, concurrent_request)
 	for j = 0; j < concurrent_request; j++ {
-		req := (*request_ahead_array)[j].req
-
-		if req.Body != http.NoBody {
-			req.GetBody()
-		}
+		var sub_iteration int64= (main_iteration*concurrent_request)+j
+		req := (*request_ahead_array)[sub_iteration].req
 
 		c_headers := C.malloc(C.size_t(len(req.Header)) * C.sizeof_struct_Headers)
 		defer C.free(unsafe.Pointer(c_headers))
@@ -113,16 +110,17 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 		if body != nil {
 			request_input[j] = C.struct_SingleRequestInput{
-				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[j].uid), 10)),
+				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
 				url:         C.CString(req.URL.String()),
 				method:      C.CString(req.Method),
 				headers:     (*C.struct_Headers)(c_headers),
 				headers_len: C.int(len(req.Header)),
 				body:        C.CString(string(body)),
+				time_out_in_sec: 5*60,
 			}
 		} else {
 			request_input[j] = C.struct_SingleRequestInput{
-				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[j].uid), 10)),
+				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
 				url:         C.CString(req.URL.String()),
 				method:      C.CString(req.Method),
 				headers:     (*C.struct_Headers)(c_headers),
@@ -143,6 +141,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
+		var sub_iteration int64= (main_iteration*concurrent_request)+j
 		additional_detail := AdditionalAPIDetails{
 			request_id:                  int64(*data.uid),
 			request_sent:                time.UnixMicro(int64(data.before_connect_time_microsec)),
@@ -151,11 +150,11 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 			request_processed:           time.UnixMicro(int64(data.finish_at_microsec)),
 		}
 		api_data := APIData{
-			url:     (*request_ahead_array)[j].req.URL.String(),
+			url:     (*request_ahead_array)[sub_iteration].req.URL.String(),
 			context: "API response",
 			context_data: ContextData{
 				status_code: int(data.status_code),
-				payload:     (*request_ahead_array)[j].payload,
+				payload:     (*request_ahead_array)[sub_iteration].payload,
 				// json_body:       json_body,
 				// body:            body,
 				time:            int64(int64(data.total_time_microsec)/1000),
@@ -168,7 +167,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 			resp = nil
 		}
 		messages := MessageType{
-			UID:                  (*request_ahead_array)[j].uid,
+			UID:                  (*request_ahead_array)[sub_iteration].uid,
 			Data:                 api_data,
 			Time_to_complete_api: int64(int64(data.total_time_microsec)/1000),
 			Err:                  fmt.Errorf("Curl error code %d", strconv.Itoa(int(data.err_code))),

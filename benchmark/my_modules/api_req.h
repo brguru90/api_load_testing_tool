@@ -39,6 +39,7 @@ typedef struct SingleRequestInput
     headers_type *headers;
     int headers_len;
     char *body;
+    int time_out_in_sec;
 } request_input;
 
 typedef struct ResponseData
