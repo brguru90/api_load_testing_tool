@@ -82,8 +82,15 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
 	request_input := make([]C.struct_SingleRequestInput, concurrent_request)
 	for j = 0; j < concurrent_request; j++ {
-		var sub_iteration int64= (main_iteration*concurrent_request)+j
+		var sub_iteration int64 = (main_iteration * concurrent_request) + j
 		req := (*request_ahead_array)[sub_iteration].req
+
+
+		cookies := ""
+		for _, cookie := range req.Cookies() {
+			// fmt.Printf("%s\n\n",cookie.String())
+			cookies += cookie.String() + ";"
+		}
 
 		c_headers := C.malloc(C.size_t(len(req.Header)) * C.sizeof_struct_Headers)
 		defer C.free(unsafe.Pointer(c_headers))
@@ -110,13 +117,14 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 		if body != nil {
 			request_input[j] = C.struct_SingleRequestInput{
-				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
-				url:         C.CString(req.URL.String()),
-				method:      C.CString(req.Method),
-				headers:     (*C.struct_Headers)(c_headers),
-				headers_len: C.int(len(req.Header)),
-				body:        C.CString(string(body)),
-				time_out_in_sec: 5*60,
+				uid:             C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
+				url:             C.CString(req.URL.String()),
+				method:          C.CString(req.Method),
+				headers:         (*C.struct_Headers)(c_headers),
+				headers_len:     C.int(len(req.Header)),
+				cookies:         C.CString(cookies),
+				body:            C.CString(string(body)),
+				time_out_in_sec: 5 * 60,
 			}
 		} else {
 			request_input[j] = C.struct_SingleRequestInput{
@@ -125,6 +133,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 				method:      C.CString(req.Method),
 				headers:     (*C.struct_Headers)(c_headers),
 				headers_len: C.int(len(req.Header)),
+				cookies:     C.CString(cookies),
 			}
 		}
 	}
@@ -141,7 +150,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
-		var sub_iteration int64= (main_iteration*concurrent_request)+j
+		var sub_iteration int64 = (main_iteration * concurrent_request) + j
 		additional_detail := AdditionalAPIDetails{
 			request_id:                  int64(*data.uid),
 			request_sent:                time.UnixMicro(int64(data.before_connect_time_microsec)),
@@ -157,9 +166,9 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 				payload:     (*request_ahead_array)[sub_iteration].payload,
 				// json_body:       json_body,
 				// body:            body,
-				time:            int64(int64(data.total_time_microsec)/1000),
-				time_to_connect: int64(int64(data.connect_time_microsec)/1000),
-				ttfb:            int64(int64(data.time_to_first_byte_microsec/1000)),
+				time:            int64(int64(data.total_time_microsec) / 1000),
+				time_to_connect: int64(int64(data.connect_time_microsec) / 1000),
+				ttfb:            int64(int64(data.time_to_first_byte_microsec / 1000)),
 			},
 		}
 		resp, err := parseHttpResponse(C.GoString(data.response_header), C.GoString(data.response_body), nil)
@@ -169,7 +178,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 		messages := MessageType{
 			UID:                  (*request_ahead_array)[sub_iteration].uid,
 			Data:                 api_data,
-			Time_to_complete_api: int64(int64(data.total_time_microsec)/1000),
+			Time_to_complete_api: int64(int64(data.total_time_microsec) / 1000),
 			Err:                  fmt.Errorf("Curl error code %d", strconv.Itoa(int(data.err_code))),
 			Res:                  resp,
 		}
@@ -373,19 +382,21 @@ func BenchmarkAPIAsMultiUser(
 
 			for message := range *messages {
 
-				if response_interceptor != nil {
+				if message.Res != nil && response_interceptor != nil {
 					response_interceptor(message.Res, message.UID)
 				}
 
 				response_size := 0
-				if ShouldDumpRequestAndResponse {
-					respDump, err := httputil.DumpResponse(message.Res, true)
-					if err == nil {
-						response_size = len(respDump)
-						respDump = nil
+				if message.Res != nil {
+					if ShouldDumpRequestAndResponse {
+						respDump, err := httputil.DumpResponse(message.Res, true)
+						if err == nil {
+							response_size = len(respDump)
+							respDump = nil
+						}
 					}
+					message.Res.Body.Close()
 				}
-				message.Res.Body.Close()
 
 				avg_response_payload_size += float64(response_size)
 

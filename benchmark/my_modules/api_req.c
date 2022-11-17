@@ -69,19 +69,21 @@ response_data send_raw_request(request_input *req_input, response_data *response
     res_data.uid = req_input->uid;
     res_data.status_code = -2;
 
-    switch (debug)
+
+    if (debug > 0)
     {
-    case 2:
+        printf("debug_level%d\n", debug);
+        printf("%s\n", req_input->url);
+    }
+    if (debug > 1)
+    {
+        printf("cookies=> %s\n\n", req_input->cookies);
+    }
+    if (debug > 2)
+    {
         printf("header count=%d\n\n", req_input->headers_len);
         printf("%s\n\n", req_input->headers[0].header);
         printf("body=%s\n\n", req_input->body);
-    case 1:
-        printf("debug_level%d\n", debug);
-        printf("%s\n", req_input->url);
-        break;
-
-    default:
-        break;
     }
 
     CURL *curl;
@@ -107,11 +109,13 @@ response_data send_raw_request(request_input *req_input, response_data *response
         curl_easy_setopt(curl, CURLOPT_URL, req_input->url);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYSTATUS, 0);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_COOKIE, req_input->cookies);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "cgo benchmark tool");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, req_input->method);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, req_input->time_out_in_sec);
+
 
         // from response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_writer);
@@ -137,7 +141,7 @@ response_data send_raw_request(request_input *req_input, response_data *response
         {
             if (debug > 1)
             {
-                fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                printf("curl_easy_perform() failed: %s\n",
                         curl_easy_strerror(res));
             }
             response_code = -1;
@@ -219,14 +223,14 @@ void send_request_in_concurrently(request_input *req_inputs, response_data *resp
         proc_data[p].start_index = p * max_work_on_thread;
         proc_data[p].end_index = (proc_data[p].start_index + max_work_on_thread) - 1;
         proc_data[p].full_index = false;
-        proc_data[p].uuid=_additional_details.uuid;
+        proc_data[p].uuid = _additional_details.uuid;
     }
     if (left_out_work > 0)
     {
         proc_data[num_of_threads].start_index = num_of_threads * max_work_on_thread;
         proc_data[num_of_threads].end_index = (proc_data[num_of_threads].start_index + left_out_work) - 1;
         proc_data[num_of_threads].full_index = false;
-        proc_data[num_of_threads].uuid=_additional_details.uuid;
+        proc_data[num_of_threads].uuid = _additional_details.uuid;
     }
 
     int thread_size = (left_out_work == 0 ? num_of_threads : num_of_threads + 1);

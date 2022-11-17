@@ -37,6 +37,7 @@ typedef struct SingleRequestInput
     char *url;
     char *method;
     headers_type *headers;
+    char* cookies;
     int headers_len;
     char *body;
     int time_out_in_sec;
