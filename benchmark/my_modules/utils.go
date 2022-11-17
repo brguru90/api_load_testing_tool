@@ -39,6 +39,7 @@ type CreatedAPIRequestFormat struct {
 	payload      map[string]interface{}
 	url          string
 	uid          int64
+	raw_req string
 }
 
 func RandomBytes(size int) (blk []byte, err error) {
@@ -111,11 +112,15 @@ func CreateAPIRequest(
 
 	var request_size int = 0
 
-	if ShouldDumpRequestAndResponse {
-		reqDump, err := httputil.DumpRequestOut(req, true)
-		if err == nil {
-			request_size = len(reqDump)
-		}
+	// if ShouldDumpRequestAndResponse {
+	// 	reqDump, err := httputil.DumpRequestOut(req, true)
+	// 	if err == nil {
+	// 		request_size = len(reqDump)
+	// 	}
+	// }
+	reqDump, err := httputil.DumpRequestOut(req, true)
+	if err == nil {
+		request_size = len(reqDump)
 	}
 
 	return CreatedAPIRequestFormat{
@@ -125,6 +130,7 @@ func CreateAPIRequest(
 		payload:      payload_obj,
 		url:          _url,
 		uid:          uid,
+		raw_req: string(reqDump),
 	}
 
 }

@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "Dockerfile-alternate__update_missing_tb_action_data": "dockerfile",
+        "thread_runner.h": "c",
+        "cmath": "c",
+        "cstdarg": "c",
+        "cstdio": "c",
+        "cstdlib": "c",
+        "type_traits": "c",
+        "limits": "c",
+        "*.tcc": "c",
+        "cstdint": "c",
+        "typeinfo": "c"
+    }
+}

@@ -54,29 +54,39 @@ type CGlobalAllIterationData struct {
 
 var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
 
-func send_request(main_iteration int64, sub_iteration int64, uuid string) {
-	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
-	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
-	defer func() {
-		(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
-			req:          nil,
-			err:          nil,
-			payload:      nil,
-			request_size: 0,
-		}
-	}()
+func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
+	var concurrent_req_wg sync.WaitGroup
+	var j int64
+	concurrent_req_wg.Add(int(concurrent_request))
 
-	data, time_to_complete_api, resp, additional_details, err := APIReq(&(*request_ahead_array)[sub_iteration])
-	// fmt.Printf("finish APIReq\n")
-	(*all_iteration_data)[main_iteration].additional_details <- additional_details
-	(*all_iteration_data)[main_iteration].messages <- MessageType{
-		UID:                  (*request_ahead_array)[sub_iteration].uid,
-		Data:                 data,
-		Time_to_complete_api: time_to_complete_api,
-		Err:                  err,
-		Res:                  resp,
+	for j = 0; j < concurrent_request; j++ {
+		go func(main_iteration int64, sub_iteration int64) {
+			request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+			all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+			defer func() {
+				(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
+					req:          nil,
+					err:          nil,
+					payload:      nil,
+					request_size: 0,
+				}
+			}()
+
+			data, time_to_complete_api, resp, additional_details, err := APIReq(&(*request_ahead_array)[sub_iteration])
+			// fmt.Printf("finish APIReq\n")
+			(*all_iteration_data)[main_iteration].additional_details <- additional_details
+			(*all_iteration_data)[main_iteration].messages <- MessageType{
+				UID:                  (*request_ahead_array)[sub_iteration].uid,
+				Data:                 data,
+				Time_to_complete_api: time_to_complete_api,
+				Err:                  err,
+				Res:                  resp,
+			}
+			concurrent_req_wg.Done()
+		}(i, (i*concurrent_request)+j)
 	}
-	// fmt.Printf("finish channel\n")
+
+	concurrent_req_wg.Wait()
 }
 
 // run the http request concurrently with set of iteration
@@ -114,7 +124,7 @@ func BenchmarkAPIAsMultiUser(
 		panic("(total_number_of_request % concurrent_request)!=0")
 	}
 
-	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
+	var rh_concurrent_req_wg sync.WaitGroup
 	var rh_iteration_wg sync.WaitGroup
 
 	var i, j int64
@@ -182,41 +192,7 @@ func BenchmarkAPIAsMultiUser(
 			// additional_details := &(all_iteration_data[i].additional_details)
 			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
-
-			concurrent_req_wg.Add(int(concurrent_request))
-			// todo:
-			// Need to call concurrent request using c thread
-			for j = 0; j < concurrent_request; j++ {
-				// fmt.Printf("%v-%v\n", i, j)
-				// go func(main_iteration int64,sub_iteration int64) {
-				// 	defer func() {
-				// 		request_ahead_array[sub_iteration] = CreatedAPIRequestFormat{
-				// 			req:          nil,
-				// 			err:          nil,
-				// 			payload:      nil,
-				// 			request_size: 0,
-				// 		}
-				// 		concurrent_req_wg.Done()
-				// 	}()
-
-				// 	data, time_to_complete_api, resp, additional_details,err := APIReq(&request_ahead_array[sub_iteration])
-				// 	// fmt.Printf("finish APIReq\n")
-				// 	all_iteration_data[main_iteration].additional_details <- additional_details
-				// 	*messages <- MessageType{
-				// 		UID:                  request_ahead_array[sub_iteration].uid,
-				// 		Data:                 data,
-				// 		Time_to_complete_api: time_to_complete_api,
-				// 		Err:                  err,
-				// 		Res:                  resp,
-				// 	}
-				// 	// fmt.Printf("finish channel\n")
-				// }(i,(i * concurrent_request) + j)
-				go func(_i int64, sub_iteration int64) {
-					send_request(_i, sub_iteration, process_uuid)
-					concurrent_req_wg.Done()
-				}(i, (i*concurrent_request)+j)
-			}
-			concurrent_req_wg.Wait()
+			send_concurrent_request(i, concurrent_request, process_uuid)
 			all_iteration_data[i].concurrent_req_end_time = time.Now()
 
 			close(*messages)
@@ -464,7 +440,7 @@ func BenchmarkAPIAsMultiUser(
 	}
 	pushBenchMarkMetrics(result)
 	// runtime.GC()
-	c_global_all_iteration_data[process_uuid]=CGlobalAllIterationData{}
+	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{}
 	return &each_iterations_data, &temp_data
 }
 
