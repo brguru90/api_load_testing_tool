@@ -1,4 +1,14 @@
 {
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "bash",
+            "args": [
+                "-l"
+            ]
+        }
+    },
+    "terminal.integrated.inheritEnv": true,
     "files.associations": {
         "Dockerfile-alternate__update_missing_tb_action_data": "dockerfile",
         "thread_runner.h": "c",

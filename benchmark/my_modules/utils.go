@@ -1,10 +1,12 @@
 package my_modules
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptrace"
 	"net/http/httputil"
@@ -275,6 +277,32 @@ func APIReq(
 		},
 	}, end_time.Sub(start_time).Milliseconds(), resp, additional_detail, nil
 
+}
+
+
+func parseHttpResponse(header string, _body string, req *http.Request) (*http.Response, error) {
+	skip_string := "Transfer-Encoding: chunked\r\n"
+	pos := strings.Index(header, skip_string)
+	if pos >= 0 {
+		pos_end := pos + len(skip_string)
+		header = header[0:pos] + header[pos_end:]
+	}
+	r := header + _body
+	body := bytes.NewBuffer([]byte(r))
+	prefix := make([]byte, 7)
+	n, err := io.ReadFull(body, prefix)
+	if err != nil {
+		panic("handler err")
+	}
+	// fmt.Println(n, err, string(prefix))
+	if string(prefix[:n]) == "HTTP/2 " {
+		// fix HTTP/2 proto
+		return http.ReadResponse(bufio.NewReader(io.MultiReader(bytes.NewBufferString("HTTP/2.0 "), body)), req)
+	} else {
+		// other proto
+		// return http.ReadResponse(bufio.NewReader(bytes.NewBuffer([]byte(r))), req)
+		return http.ReadResponse(bufio.NewReader(io.MultiReader(bytes.NewBuffer(prefix[:n]), body)), req)
+	}
 }
 
 func CheckError(err error) {

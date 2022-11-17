@@ -24,8 +24,16 @@ typedef struct Headers
     char *header;
 } headers_type;
 
+typedef struct AdditionalDetails
+{
+    char *uuid;
+    int total_requests;
+    int total_threads;
+} additional_details;
+
 typedef struct SingleRequestInput
 {
+    char *uid;
     char *url;
     char *method;
     headers_type *headers;
@@ -35,6 +43,7 @@ typedef struct SingleRequestInput
 
 typedef struct ResponseData
 {
+    char *uid;
     char *response_header;
     char *response_body;
     // time_t before_connect_time; //long int
@@ -43,9 +52,10 @@ typedef struct ResponseData
     long long first_byte_at_microsec;
     long long finish_at_microsec;
     long connect_time_microsec;
-    long time_at_first_byte_microsec;
+    long time_to_first_byte_microsec;
     long total_time_microsec;
     int status_code;
+    int err_code;
 } response_data;
 
 typedef struct ThreadPoolData
@@ -53,6 +63,7 @@ typedef struct ThreadPoolData
     int start_index;
     int end_index;
     pid_t pid;
+    char *uuid;
     bool full_index;
 } thread_pool_data;
 typedef struct ThreadData
@@ -70,12 +81,7 @@ struct memory
     size_t size;
 };
 
-
-void run_bulk_api_request(char *s);
-void *goCallback_wrap(void *vargp);
-extern void goCallback(int myid);
-
-
-
-void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, int total_requests, int total_threads, int debug);
-void send_raw_request(request_input *req_input, response_data *response_ref, int debug);
+// extern void response_callback_from_c(int loop_size, response_data res_data[], char *uuid);
+void *loop_on_the_thread(void *data);
+void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, additional_details _additional_details, int debug);
+response_data send_raw_request(request_input *req_input, response_data *response_ref, int debug);

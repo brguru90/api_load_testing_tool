@@ -1,13 +1,5 @@
 #include "api_req.h"
 
-// git clone https://github.com/curl/curl.git
-// https://gist.github.com/nolim1t/126991/ae3a7d36470d2a81190339fbc78821076a4059f7
-// https://github.com/ppelleti/https-example/blob/master/https-client.c
-// https://stackoverflow.com/questions/40303354/how-to-make-an-https-request-in-c
-// https://stackoverflow.com/questions/22077802/simple-c-example-of-doing-an-http-post-and-consuming-the-response
-// https://stackoverflow.com/questions/62387069/golang-parse-raw-http-2-response
-// https://curl.se/libcurl/c/sendrecv.html
-
 #ifdef _WIN32
 #include <Windows.h>
 struct timezone
@@ -47,44 +39,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 }
 #endif
 
-#define NUM_THREAD 5
-
-void *goCallback_wrap(void *vargp)
-{
-    int *myid = (int *)vargp;
-    printf("tid=%d\n", *myid);
-    // goCallback(*myid);
-    pthread_exit(NULL);
-}
-
-void run_bulk_api_request(char *s)
-{
-    printf("%s\n", s);
-
-    int i, nor_of_thread;
-    // pthread_t threads[NUM_THREAD];
-    printf("Enter number of thread\n");
-    scanf("%d", &nor_of_thread);
-    printf("Entered %d\n", nor_of_thread);
-    pthread_t *threads = malloc(sizeof(pthread_t) * nor_of_thread);
-    pthread_t tid;
-
-    for (i = 0; i < nor_of_thread; i++)
-    {
-        pthread_create(&threads[i], NULL, goCallback_wrap, (void *)&threads[i]);
-    }
-
-    for (i = 0; i < nor_of_thread; i++)
-    {
-        pthread_join(threads[i], NULL);
-    }
-
-    // printf("Main thread exiting...\n");
-    // pthread_exit(NULL);
-
-    goCallback(-1);
-}
-
 long long get_current_time()
 {
     struct timeval tv;
@@ -109,9 +63,10 @@ static size_t response_writer(void *data, size_t size, size_t nmemb, void *userp
     return realsize;
 }
 
-void send_raw_request(request_input *req_input, response_data *response_ref, int debug)
+response_data send_raw_request(request_input *req_input, response_data *response_ref, int debug)
 {
     response_data res_data;
+    res_data.uid = req_input->uid;
     res_data.status_code = -2;
 
     switch (debug)
@@ -185,6 +140,7 @@ void send_raw_request(request_input *req_input, response_data *response_ref, int
                         curl_easy_strerror(res));
             }
             response_code = -1;
+            res_data.err_code = res;
         }
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
         res = curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME_T, &connect);
@@ -205,7 +161,7 @@ void send_raw_request(request_input *req_input, response_data *response_ref, int
         if (debug > 1)
         {
             printf("status_code=%ld\n", response_code);
-            printf("before_connect_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf\n",res_data.before_connect_time_microsec, connect / 1e6, start / 1e6, total / 1e6);
+            printf("before_connect_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf\n", res_data.before_connect_time_microsec, connect / 1e6, start / 1e6, total / 1e6);
         }
         if (debug > 2)
         {
@@ -214,11 +170,11 @@ void send_raw_request(request_input *req_input, response_data *response_ref, int
 
         res_data.status_code = response_code;
         res_data.connect_time_microsec = connect;
-        res_data.time_at_first_byte_microsec = start;
+        res_data.time_to_first_byte_microsec = start;
         res_data.total_time_microsec = total;
-        res_data.connected_at_microsec=res_data.before_connect_time_microsec+connect;
-        res_data.first_byte_at_microsec=res_data.before_connect_time_microsec+start;
-        res_data.finish_at_microsec=res_data.before_connect_time_microsec+total;
+        res_data.connected_at_microsec = res_data.before_connect_time_microsec + connect;
+        res_data.first_byte_at_microsec = res_data.before_connect_time_microsec + start;
+        res_data.finish_at_microsec = res_data.before_connect_time_microsec + total;
 
         res_data.response_header = header.data;
         res_data.response_body = body.data;
@@ -232,20 +188,28 @@ void send_raw_request(request_input *req_input, response_data *response_ref, int
 void *loop_on_the_thread(void *data)
 {
     thread_data *td = (thread_data *)data;
+    // int loop_size = (td->th_pool_data.end_index - td->th_pool_data.start_index)+1;
+    // response_data res_data[loop_size];
+    // int j = 0;
     for (int i = td->th_pool_data.start_index; i <= td->th_pool_data.end_index; i++)
     {
         send_raw_request(&(td->req_inputs_ptr[i]), &(td->response_ref_ptr[i]), td->debug_flag);
+        // res_data[j++] = send_raw_request(&(td->req_inputs_ptr[i]), &(td->response_ref_ptr[i]), td->debug_flag);
     }
+    // GoString go_str = {p: td->th_pool_data.uuid, n: strlen(td->th_pool_data.uuid)};
+    // response_callback_from_c(loop_size,res_data,td->th_pool_data.uuid);
+    return NULL;
 }
 
-void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, int total_requests, int total_threads, int debug)
+void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, additional_details _additional_details, int debug)
 {
 
+    int total_requests = _additional_details.total_requests, total_threads = _additional_details.total_threads;
     int num_of_threads = total_requests >= total_threads ? total_threads : total_requests;
     int max_work_on_thread = floor((float)total_requests / num_of_threads);
     int left_out_work = total_requests % num_of_threads;
 
-    printf("total_requests=%d,total_threads=%d,num_of_threads=%d,max_work_on_thread=%d,left_out_work=%d\n", total_requests, total_threads, num_of_threads, max_work_on_thread, left_out_work);
+    // printf("total_requests=%d,total_threads=%d,num_of_threads=%d,max_work_on_thread=%d,left_out_work=%d\n", total_requests, total_threads, num_of_threads, max_work_on_thread, left_out_work);
 
     thread_pool_data proc_data[left_out_work == 0 ? num_of_threads : num_of_threads + 1];
 
@@ -254,12 +218,14 @@ void send_request_in_concurrently(request_input *req_inputs, response_data *resp
         proc_data[p].start_index = p * max_work_on_thread;
         proc_data[p].end_index = (proc_data[p].start_index + max_work_on_thread) - 1;
         proc_data[p].full_index = false;
+        proc_data[p].uuid=_additional_details.uuid;
     }
     if (left_out_work > 0)
     {
         proc_data[num_of_threads].start_index = num_of_threads * max_work_on_thread;
         proc_data[num_of_threads].end_index = (proc_data[num_of_threads].start_index + left_out_work) - 1;
         proc_data[num_of_threads].full_index = false;
+        proc_data[num_of_threads].uuid=_additional_details.uuid;
     }
 
     int thread_size = (left_out_work == 0 ? num_of_threads : num_of_threads + 1);

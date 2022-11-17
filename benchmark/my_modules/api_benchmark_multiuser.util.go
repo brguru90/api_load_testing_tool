@@ -1,12 +1,27 @@
 package my_modules
 
+/*
+#cgo linux pkg-config: libcurl
+#cgo darwin LDFLAGS: -lcurl
+#cgo windows LDFLAGS: -lcurl
+#include <stdlib.h>
+#include <string.h>
+#include "api_req.h"
+#cgo CFLAGS: -g -Wall
+#cgo LDFLAGS: -lssl -lcrypto -lpthread -lm
+*/
+import "C"
 import (
 	"fmt"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"reflect"
+	"strconv"
+	"unsafe"
 
-	// "runtime"
 	"sync"
 	"time"
 
@@ -54,7 +69,141 @@ type CGlobalAllIterationData struct {
 
 var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
 
+func check_error(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_request int64, uuid string) {
+	var i int = 0
+	var j int64 = 0
+	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	request_input := make([]C.struct_SingleRequestInput, concurrent_request)
+	for j = 0; j < concurrent_request; j++ {
+		req := (*request_ahead_array)[j].req
+
+		if req.Body != http.NoBody {
+			req.GetBody()
+		}
+
+		c_headers := C.malloc(C.size_t(len(req.Header)) * C.sizeof_struct_Headers)
+		defer C.free(unsafe.Pointer(c_headers))
+		headers_data := (*[1<<30 - 1]C.struct_Headers)(c_headers)
+		i = 0
+		for name, values := range req.Header {
+			for _, value := range values {
+				headers_data[i] = C.struct_Headers{
+					header: C.CString(name + ": " + value),
+				}
+				i++
+			}
+		}
+
+		var body []byte = nil
+		if req.Body != http.NoBody {
+			Body, err := req.GetBody()
+			check_error(err)
+			if err == nil && Body != nil {
+				body, err = ioutil.ReadAll(Body)
+				check_error(err)
+			}
+		}
+
+		if body != nil {
+			request_input[j] = C.struct_SingleRequestInput{
+				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[j].uid), 10)),
+				url:         C.CString(req.URL.String()),
+				method:      C.CString(req.Method),
+				headers:     (*C.struct_Headers)(c_headers),
+				headers_len: C.int(len(req.Header)),
+				body:        C.CString(string(body)),
+			}
+		} else {
+			request_input[j] = C.struct_SingleRequestInput{
+				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[j].uid), 10)),
+				url:         C.CString(req.URL.String()),
+				method:      C.CString(req.Method),
+				headers:     (*C.struct_Headers)(c_headers),
+				headers_len: C.int(len(req.Header)),
+			}
+		}
+	}
+
+	bulk_response_data := make([]C.struct_ResponseData, concurrent_request)
+	ram_size_in_GB := float64(C.sysconf(C._SC_PHYS_PAGES)*C.sysconf(C._SC_PAGE_SIZE)) / (1024 * 1024)
+	nor_of_thread := math.Ceil(ram_size_in_GB / 70)
+	// fmt.Println("Nor of threads", nor_of_thread)
+	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.struct_AdditionalDetails{
+		uuid:           C.CString(uuid),
+		total_requests: C.int(concurrent_request),
+		total_threads:  C.int(nor_of_thread),
+	}, 0)
+
+	for j = 0; j < concurrent_request; j++ {
+		data := bulk_response_data[j]
+		additional_detail := AdditionalAPIDetails{
+			request_id:                  int64(*data.uid),
+			request_sent:                time.UnixMicro(int64(data.before_connect_time_microsec)),
+			request_connected:           time.UnixMicro(int64(data.connected_at_microsec)),
+			request_receives_first_byte: time.UnixMicro(int64(data.first_byte_at_microsec)),
+			request_processed:           time.UnixMicro(int64(data.finish_at_microsec)),
+		}
+		api_data := APIData{
+			url:     (*request_ahead_array)[j].req.URL.String(),
+			context: "API response",
+			context_data: ContextData{
+				status_code: int(data.status_code),
+				payload:     (*request_ahead_array)[j].payload,
+				// json_body:       json_body,
+				// body:            body,
+				time:            int64(int64(data.total_time_microsec)/1000),
+				time_to_connect: int64(int64(data.connect_time_microsec)/1000),
+				ttfb:            int64(int64(data.time_to_first_byte_microsec/1000)),
+			},
+		}
+		resp, err := parseHttpResponse(C.GoString(data.response_header), C.GoString(data.response_body), nil)
+		if err != nil {
+			resp = nil
+		}
+		messages := MessageType{
+			UID:                  (*request_ahead_array)[j].uid,
+			Data:                 api_data,
+			Time_to_complete_api: int64(int64(data.total_time_microsec)/1000),
+			Err:                  fmt.Errorf("Curl error code %d", strconv.Itoa(int(data.err_code))),
+			Res:                  resp,
+		}
+
+		(*all_iteration_data)[main_iteration].additional_details <- additional_detail
+		(*all_iteration_data)[main_iteration].messages <- messages
+	}
+
+}
+
+func carray2slice(array *C.int, len int) []C.int {
+	var list []C.int
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&list)))
+	sliceHeader.Cap = len
+	sliceHeader.Len = len
+	sliceHeader.Data = uintptr(unsafe.Pointer(array))
+	return list
+}
+
+//export response_callback_from_c
+func response_callback_from_c(arr_len C.int, response_data []C.struct_ResponseData, uuid *C.char) {
+	fmt.Println(C.GoString(uuid))
+	// fmt.Printf("%s",uuid)
+	fmt.Println(arr_len)
+}
+
 func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
+
+	if os.Getenv("USING_C_CURL") == "true" {
+		send_concurrent_request_using_c_curl(i, concurrent_request, uuid)
+		return
+	}
+
 	var concurrent_req_wg sync.WaitGroup
 	var j int64
 	concurrent_req_wg.Add(int(concurrent_request))

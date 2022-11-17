@@ -7,3 +7,4 @@ benchmark.bin
 mem.pprof
 debug.bin
 cpu.pprof
+api_req.so
