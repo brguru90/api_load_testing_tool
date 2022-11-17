@@ -38,25 +38,30 @@ typedef struct ResponseData
     char *response_header;
     char *response_body;
     // time_t before_connect_time; //long int
-    long long before_connect_time;
+    long long before_connect_time_microsec;
+    long long connected_at_microsec;
+    long long first_byte_at_microsec;
+    long long finish_at_microsec;
     long connect_time_microsec;
     long time_at_first_byte_microsec;
     long total_time_microsec;
     int status_code;
 } response_data;
 
-typedef struct RequestResponse
+typedef struct ThreadPoolData
+{
+    int start_index;
+    int end_index;
+    pid_t pid;
+    bool full_index;
+} thread_pool_data;
+typedef struct ThreadData
 {
     request_input *req_inputs_ptr;
     response_data *response_ref_ptr;
-    
-} request_response;
-
-typedef struct ThreadData
-{
-    request_response req_res;
     int thread_id;
     int debug_flag;
+    thread_pool_data th_pool_data;
 } thread_data;
 
 struct memory
@@ -65,13 +70,6 @@ struct memory
     size_t size;
 };
 
-typedef struct ProcessData
-{
-    int start_index;
-    int end_index;
-    pid_t pid;
-    bool full_index;
-} process_data;
 
 void run_bulk_api_request(char *s);
 void *goCallback_wrap(void *vargp);
@@ -79,6 +77,5 @@ extern void goCallback(int myid);
 
 
 
-void send_request_in_parallel(request_input *req_inputs, response_data *response_ref, int total_requests, int num_cpu, int debug);
-void send_request_concurrently(request_input *req_inputs, response_data *response_ref, int total_requests, int num_cpu,process_data proc_data, int debug);
+void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, int total_requests, int total_threads, int debug);
 void send_raw_request(request_input *req_input, response_data *response_ref, int debug);
