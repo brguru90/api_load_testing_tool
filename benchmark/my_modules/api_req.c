@@ -74,11 +74,11 @@ response_data send_raw_request(request_input *req_input, response_data *response
         printf("debug_level%d\n", debug);
         printf("%s\n", req_input->url);
     }
-    if (debug > 1)
+    if (debug > 2)
     {
         printf("cookies=>%s\n\n", req_input->cookies);
     }
-    if (debug > 1)
+    if (debug > 2)
     {
         printf("header count=%d\n\n", req_input->headers_len);
         for (int i = 0; i < req_input->headers_len; i++)
@@ -140,6 +140,7 @@ response_data send_raw_request(request_input *req_input, response_data *response
 
         res_data.before_connect_time_microsec = get_current_time();
         res = curl_easy_perform(curl);
+        res_data.after_response_time_microsec = get_current_time();
         /* Check for errors */
         if (res != CURLE_OK)
         {
@@ -170,9 +171,9 @@ response_data send_raw_request(request_input *req_input, response_data *response
         if (debug > 1)
         {
             printf("status_code=%ld\n", response_code);
-            printf("before_connect_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf\n", res_data.before_connect_time_microsec, connect / 1e6, start / 1e6, total / 1e6);
+            printf("before_connect_time_microsec=%lld,after_response_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf.total2=%lld\n", res_data.before_connect_time_microsec,res_data.after_response_time_microsec, connect / 1e6, start / 1e6, total / 1e6,res_data.after_response_time_microsec-res_data.before_connect_time_microsec);
         }
-        if (debug > 2)
+        if (debug > 3)
         {
             printf("%s\n%s\n", header.data, body.data);
         }
@@ -180,10 +181,11 @@ response_data send_raw_request(request_input *req_input, response_data *response
         res_data.status_code = response_code;
         res_data.connect_time_microsec = connect;
         res_data.time_to_first_byte_microsec = start;
-        res_data.total_time_microsec = total;
+        res_data.total_time_from_curl_microsec = total;
+        res_data.total_time_microsec = (res_data.after_response_time_microsec-res_data.before_connect_time_microsec);
         res_data.connected_at_microsec = res_data.before_connect_time_microsec + connect;
         res_data.first_byte_at_microsec = res_data.before_connect_time_microsec + start;
-        res_data.finish_at_microsec = res_data.before_connect_time_microsec + total;
+        res_data.finish_at_microsec = res_data.before_connect_time_microsec +  res_data.total_time_microsec;
 
         res_data.response_header = header.data;
         res_data.response_body = body.data;

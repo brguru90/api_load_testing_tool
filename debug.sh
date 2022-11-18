@@ -3,6 +3,7 @@ export GIN_MODE=debug
 export DISABLE_COLOR=false
 export PROFILING=true
 export CALCULATE_PAYLOAD_SIZE=false
+export USING_C_CURL=true
 # export GOGC=off
 
 PID_LIST=""
@@ -13,6 +14,7 @@ function beforeExit() {
     trap - SIGINT
     kill -s SIGINT $PID_LIST    
     sleep 2
+    # analyse generated profiling data
     go tool pprof --http=localhost:8800 ./debug.bin ./mem.pprof
     echo "Benchmark Exited";
 }

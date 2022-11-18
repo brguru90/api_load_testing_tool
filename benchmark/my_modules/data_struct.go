@@ -51,7 +51,7 @@ type AdditionalAPIDetails struct {
 type MessageType struct {
 	UID int64
 	Data                        APIData
-	Time_to_complete_api        int64
+	Time_to_complete_api        float64
 	Err                         error
 	Res                         *http.Response
 }

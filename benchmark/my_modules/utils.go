@@ -23,9 +23,9 @@ type ContextData struct {
 	payload         map[string]interface{}
 	json_body       map[string]interface{}
 	body            []byte
-	time            int64
-	time_to_connect int64
-	ttfb            int64
+	time            float64
+	time_to_connect float64
+	ttfb            float64
 }
 
 type APIData struct {
@@ -141,7 +141,7 @@ func CreateAPIRequest(
 // get the metrics like delay, payload size etc for particular request
 func APIReq(
 	api_request *CreatedAPIRequestFormat,
-) (APIData, int64, *http.Response, AdditionalAPIDetails, error) {
+) (APIData, float64, *http.Response, AdditionalAPIDetails, error) {
 	uid := &api_request.uid
 	additional_detail := AdditionalAPIDetails{
 		request_id: *uid,
@@ -242,7 +242,7 @@ func APIReq(
 				status_code: -1,
 				payload:     api_request.payload,
 			},
-		}, end_time.Sub(start_time).Milliseconds(), nil, additional_detail, err
+		}, float64(end_time.Sub(start_time).Microseconds())/1000, nil, additional_detail, err
 	}
 
 	// if response_interceptor != nil {
@@ -271,11 +271,11 @@ func APIReq(
 			payload:     api_request.payload,
 			// json_body:       json_body,
 			// body:            body,
-			time:            end_time.Sub(start_time).Milliseconds(),
-			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
-			ttfb:            ttfb.Sub(start_time).Milliseconds(),
+			time:            float64(end_time.Sub(start_time).Microseconds())/1000,
+			time_to_connect: float64(connected_time.Sub(start_time).Microseconds())/1000,
+			ttfb:            float64(ttfb.Sub(start_time).Microseconds())/1000,
 		},
-	}, end_time.Sub(start_time).Milliseconds(), resp, additional_detail, nil
+	}, float64(end_time.Sub(start_time).Microseconds())/1000, resp, additional_detail, nil
 
 }
 

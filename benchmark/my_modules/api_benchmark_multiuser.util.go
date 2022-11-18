@@ -85,7 +85,6 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 		var sub_iteration int64 = (main_iteration * concurrent_request) + j
 		req := (*request_ahead_array)[sub_iteration].req
 
-
 		cookies := ""
 		for _, cookie := range req.Cookies() {
 			// fmt.Printf("%s\n\n",cookie.String())
@@ -142,11 +141,13 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	ram_size_in_GB := float64(C.sysconf(C._SC_PHYS_PAGES)*C.sysconf(C._SC_PAGE_SIZE)) / (1024 * 1024)
 	nor_of_thread := math.Ceil(ram_size_in_GB / 70)
 	// fmt.Println("Nor of threads", nor_of_thread)
+	(*all_iteration_data)[main_iteration].concurrent_req_start_time = time.Now()
 	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.struct_AdditionalDetails{
 		uuid:           C.CString(uuid),
 		total_requests: C.int(concurrent_request),
 		total_threads:  C.int(nor_of_thread),
 	}, 0)
+	(*all_iteration_data)[main_iteration].concurrent_req_end_time = time.Now()
 
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
@@ -156,7 +157,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 			request_sent:                time.UnixMicro(int64(data.before_connect_time_microsec)),
 			request_connected:           time.UnixMicro(int64(data.connected_at_microsec)),
 			request_receives_first_byte: time.UnixMicro(int64(data.first_byte_at_microsec)),
-			request_processed:           time.UnixMicro(int64(data.finish_at_microsec)),
+			request_processed:           time.UnixMicro(int64(data.after_response_time_microsec)),
 		}
 		api_data := APIData{
 			url:     (*request_ahead_array)[sub_iteration].req.URL.String(),
@@ -166,9 +167,9 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 				payload:     (*request_ahead_array)[sub_iteration].payload,
 				// json_body:       json_body,
 				// body:            body,
-				time:            int64(int64(data.total_time_microsec) / 1000),
-				time_to_connect: int64(int64(data.connect_time_microsec) / 1000),
-				ttfb:            int64(int64(data.time_to_first_byte_microsec / 1000)),
+				time:            (float64(int64(data.total_time_microsec)) / 1000),
+				time_to_connect: (float64(int64(data.connect_time_microsec)) / 1000),
+				ttfb:            (float64(int64(data.time_to_first_byte_microsec)) / 1000),
 			},
 		}
 		resp, err := parseHttpResponse(C.GoString(data.response_header), C.GoString(data.response_body), nil)
@@ -178,13 +179,19 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 		messages := MessageType{
 			UID:                  (*request_ahead_array)[sub_iteration].uid,
 			Data:                 api_data,
-			Time_to_complete_api: int64(int64(data.total_time_microsec) / 1000),
+			Time_to_complete_api: float64(int64(data.total_time_microsec))/1000,
 			Err:                  fmt.Errorf("Curl error code %d", strconv.Itoa(int(data.err_code))),
 			Res:                  resp,
 		}
 
 		(*all_iteration_data)[main_iteration].additional_details <- additional_detail
 		(*all_iteration_data)[main_iteration].messages <- messages
+		(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
+			req:          nil,
+			err:          nil,
+			payload:      nil,
+			request_size: 0,
+		}
 	}
 
 }
@@ -212,14 +219,15 @@ func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 		return
 	}
 
+	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+
 	var concurrent_req_wg sync.WaitGroup
 	var j int64
 	concurrent_req_wg.Add(int(concurrent_request))
-
+	(*all_iteration_data)[i].concurrent_req_start_time = time.Now()
 	for j = 0; j < concurrent_request; j++ {
 		go func(main_iteration int64, sub_iteration int64) {
-			request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
-			all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
 			defer func() {
 				(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
 					req:          nil,
@@ -242,8 +250,8 @@ func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 			concurrent_req_wg.Done()
 		}(i, (i*concurrent_request)+j)
 	}
-
 	concurrent_req_wg.Wait()
+	(*all_iteration_data)[i].concurrent_req_end_time = time.Now()
 }
 
 // run the http request concurrently with set of iteration
@@ -347,10 +355,8 @@ func BenchmarkAPIAsMultiUser(
 		for i = 0; i < number_of_iteration; i++ {
 			messages := &(all_iteration_data[i].messages)
 			// additional_details := &(all_iteration_data[i].additional_details)
-			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
 			send_concurrent_request(i, concurrent_request, process_uuid)
-			all_iteration_data[i].concurrent_req_end_time = time.Now()
 
 			close(*messages)
 			close(all_iteration_data[i].additional_details)
@@ -366,7 +372,7 @@ func BenchmarkAPIAsMultiUser(
 			messages := &cur_iteration_data.messages
 			additional_details := &cur_iteration_data.additional_details
 
-			var avg_time_to_complete_api, avg_time_to_connect_api, avg_time_to_receive_first_byte_api int64
+			var avg_time_to_complete_api, avg_time_to_connect_api, avg_time_to_receive_first_byte_api float64
 
 			avg_time_to_complete_api = 0
 			avg_time_to_connect_api = 0
@@ -418,9 +424,9 @@ func BenchmarkAPIAsMultiUser(
 			concurrent_req_start_time := cur_iteration_data.concurrent_req_start_time
 			concurrent_req_end_time := cur_iteration_data.concurrent_req_end_time
 
-			avg_time_to_complete_api = avg_time_to_complete_api / concurrent_request
-			avg_time_to_connect_api = avg_time_to_connect_api / concurrent_request
-			avg_time_to_receive_first_byte_api = avg_time_to_receive_first_byte_api / concurrent_request
+			avg_time_to_complete_api = avg_time_to_complete_api / float64(concurrent_request)
+			avg_time_to_connect_api = avg_time_to_connect_api / float64(concurrent_request)
+			avg_time_to_receive_first_byte_api = avg_time_to_receive_first_byte_api / float64(concurrent_request)
 
 			status_code_in_percentage := make(map[int]float64)
 			for status_code, occurrence := range status_codes {
@@ -520,9 +526,9 @@ func BenchmarkAPIAsMultiUser(
 				Status_code_in_percentage:       status_code_in_percentage,
 				Status_codes:                    status_codes,
 				Concurrent_request:              concurrent_request,
-				Avg_time_to_connect_api:         avg_time_to_connect_api,
-				Avg_time_to_receive_first_byte:  avg_time_to_receive_first_byte_api,
-				Avg_time_to_complete_api:        avg_time_to_complete_api,
+				Avg_time_to_connect_api:         int64(avg_time_to_connect_api),
+				Avg_time_to_receive_first_byte:  int64(avg_time_to_receive_first_byte_api),
+				Avg_time_to_complete_api:        int64(avg_time_to_complete_api),
 				Min_time_to_complete_api:        int64(min_time_to_complete_api),
 				Max_time_to_complete_api:        int64(max_time_to_complete_api),
 				Average_request_payload_size:    avg_request_payload_size,
