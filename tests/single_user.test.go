@@ -6,5 +6,5 @@ import (
 )
 
 func TestAsSingleUser() {
-	my_modules.LogToJSON(api_requests.SignUp(10, 2), nil)
+	my_modules.LogToJSON(api_requests.SignUp(100000, 10000), nil)
 }

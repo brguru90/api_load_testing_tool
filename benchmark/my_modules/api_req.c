@@ -69,7 +69,6 @@ response_data send_raw_request(request_input *req_input, response_data *response
     res_data.uid = req_input->uid;
     res_data.status_code = -2;
 
-
     if (debug > 0)
     {
         printf("debug_level%d\n", debug);
@@ -77,13 +76,16 @@ response_data send_raw_request(request_input *req_input, response_data *response
     }
     if (debug > 1)
     {
-        printf("cookies=> %s\n\n", req_input->cookies);
+        printf("cookies=>%s\n\n", req_input->cookies);
     }
-    if (debug > 2)
+    if (debug > 1)
     {
         printf("header count=%d\n\n", req_input->headers_len);
-        printf("%s\n\n", req_input->headers[0].header);
-        printf("body=%s\n\n", req_input->body);
+        for (int i = 0; i < req_input->headers_len; i++)
+        {
+            printf("header=>%s\n\n", req_input->headers[i].header);
+        }
+        printf("body=>%s\n\n", req_input->body);
     }
 
     CURL *curl;
@@ -105,17 +107,19 @@ response_data send_raw_request(request_input *req_input, response_data *response
         curl_off_t start = -1, connect = -1, total = -1;
         struct memory body = {0}, header = {0};
         // to request
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, debug > 2 ? 1L : 0);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, debug > 3 ? 1L : 0);
         curl_easy_setopt(curl, CURLOPT_URL, req_input->url);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYSTATUS, 0);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_COOKIE, req_input->cookies);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "cgo benchmark tool");
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
+        if (req_input->body != NULL)
+        {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
+        }
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, req_input->method);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, req_input->time_out_in_sec);
-
 
         // from response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_writer);
@@ -142,7 +146,7 @@ response_data send_raw_request(request_input *req_input, response_data *response
             if (debug > 1)
             {
                 printf("curl_easy_perform() failed: %s\n",
-                        curl_easy_strerror(res));
+                       curl_easy_strerror(res));
             }
             response_code = -1;
             res_data.err_code = res;
