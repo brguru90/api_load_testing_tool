@@ -80,7 +80,8 @@ export default function AllAPISReport() {
         {
           label: 'Requests Per Second',
           data: dt.map(data => {
-            return Math.round((1 / data?.Avg_time_to_complete_api_in_sec)*data?.Concurrent_request) || 0
+            // return Math.round((1 / data?.Avg_time_to_complete_api_in_sec)*data?.Concurrent_request) || 0
+            return Math.round( data?.Total_number_of_request/data?.Total_time_to_complete_all_apis_iteration_in_sec) || 0
           }),
           borderColor: 'rgb(222, 13, 83)',
           backgroundColor: 'rgba(222, 13, 83, 0.5)',

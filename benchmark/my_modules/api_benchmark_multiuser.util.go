@@ -139,7 +139,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 	bulk_response_data := make([]C.struct_ResponseData, concurrent_request)
 	ram_size_in_GB := float64(C.sysconf(C._SC_PHYS_PAGES)*C.sysconf(C._SC_PAGE_SIZE)) / (1024 * 1024)
-	nor_of_thread := math.Ceil(ram_size_in_GB / 70)
+	nor_of_thread := math.Ceil(ram_size_in_GB / 50)
 	// fmt.Println("Nor of threads", nor_of_thread)
 	(*all_iteration_data)[main_iteration].concurrent_req_start_time = time.Now()
 	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.struct_AdditionalDetails{
@@ -186,6 +186,9 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 		(*all_iteration_data)[main_iteration].additional_details <- additional_detail
 		(*all_iteration_data)[main_iteration].messages <- messages
+		if (*request_ahead_array)[sub_iteration].req.Body != http.NoBody {
+			(*request_ahead_array)[sub_iteration].req.Body.Close()
+		}
 		(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
 			req:          nil,
 			err:          nil,

@@ -37,7 +37,7 @@ export default function APIMetricsOverview({ APIindex, url }) {
               <th>Average API response time:</th>
               <td>
                 {overview_data?.Avg_time_to_complete_api_in_sec || "-"} Seconds
-                ({Math.round((1 / overview_data?.Avg_time_to_complete_api_in_sec)*overview_data?.Concurrent_request) || "-"} Req/Sec)
+                {/* ({Math.round((1 / overview_data?.Avg_time_to_complete_api_in_sec)*overview_data?.Concurrent_request) || "-"} Req/Sec) */}
               </td>
             </tr>
             <tr>
@@ -50,7 +50,9 @@ export default function APIMetricsOverview({ APIindex, url }) {
             </tr>
             <tr>
               <th>Total time to complete all iteration:</th>
-              <td>{overview_data?.Total_time_to_complete_all_apis_iteration_in_sec || "-"} Seconds</td>
+              <td>{overview_data?.Total_time_to_complete_all_apis_iteration_in_sec || "-"} Seconds
+                ({overview_data?.Total_number_of_request / overview_data?.Total_time_to_complete_all_apis_iteration_in_sec || "-"} Req/Sec)
+              </td>
             </tr>
             <tr>
               <th>Average request payload size:</th>
