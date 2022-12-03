@@ -1,7 +1,9 @@
 package my_modules
 
 /*
+#cgo CXXFLAGS: -std=gnu++17
 #cgo linux pkg-config: libcurl
+#cgo linux pkg-config: libuv
 #cgo darwin LDFLAGS: -lcurl
 #cgo windows LDFLAGS: -lcurl
 #include <stdlib.h>
@@ -138,16 +140,20 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	}
 
 	bulk_response_data := make([]C.struct_ResponseData, concurrent_request)
-	ram_size_in_GB := float64(C.sysconf(C._SC_PHYS_PAGES)*C.sysconf(C._SC_PAGE_SIZE)) / (1024 * 1024)
-	nor_of_thread := math.Ceil(ram_size_in_GB / 50)
-	// fmt.Println("Nor of threads", nor_of_thread)
+	// ram_size_in_GB := float64(C.sysconf(C._SC_PHYS_PAGES)*C.sysconf(C._SC_PAGE_SIZE)) / (1024 * 1024)
+	// nor_of_thread := math.Ceil(ram_size_in_GB / 50)
+	// // fmt.Println("Nor of threads", nor_of_thread)
 	(*all_iteration_data)[main_iteration].concurrent_req_start_time = time.Now()
-	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.struct_AdditionalDetails{
-		uuid:           C.CString(uuid),
-		total_requests: C.int(concurrent_request),
-		total_threads:  C.int(nor_of_thread),
-	}, 0)
+	// C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.struct_AdditionalDetails{
+	// 	uuid:           C.CString(uuid),
+	// 	total_requests: C.int(concurrent_request),
+	// 	total_threads:  C.int(nor_of_thread),
+	// }, 0)
+	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]),C.int(concurrent_request), 0)
+
+
 	(*all_iteration_data)[main_iteration].concurrent_req_end_time = time.Now()
+	
 
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
@@ -218,6 +224,7 @@ func response_callback_from_c(arr_len C.int, response_data []C.struct_ResponseDa
 func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 
 	if os.Getenv("USING_C_CURL") == "true" {
+		println("Warning:  using libcurl & libuv")
 		send_concurrent_request_using_c_curl(i, concurrent_request, uuid)
 		return
 	}

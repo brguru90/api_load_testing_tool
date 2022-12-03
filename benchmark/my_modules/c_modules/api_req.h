@@ -18,20 +18,6 @@
 #endif
 
 #include <curl/curl.h>
-#include <uv.h>
-
-typedef struct curl_context_s
-{
-    uv_poll_t poll_handle;
-    curl_socket_t sockfd;
-} curl_context_t;
-
-typedef struct CurlHandlers
-{
-    uv_loop_t *loop;
-    CURLM *curl_handle;
-    uv_timer_t timeout;
-} curl_handlers_t;
 
 typedef struct Headers
 {
@@ -51,27 +37,17 @@ typedef struct SingleRequestInput
     char *url;
     char *method;
     headers_type *headers;
-    char *cookies;
+    char* cookies;
     int headers_len;
     char *body;
     int time_out_in_sec;
 } request_input;
 
-
-struct memory
-{
-    char *data;
-    size_t size;
-};
-
 typedef struct ResponseData
 {
-    int debug;
     char *uid;
     char *response_header;
     char *response_body;
-    struct memory Resp_header;
-    struct memory Resp_body;
     // time_t before_connect_time; //long int
     long long before_connect_time_microsec;
     long long after_response_time_microsec;
@@ -103,15 +79,13 @@ typedef struct ThreadData
     thread_pool_data th_pool_data;
 } thread_data;
 
-
-#ifdef __cplusplus
-extern "C"
+struct memory
 {
-#endif
+    char *data;
+    size_t size;
+};
 
-    void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, int total_requests, int debug);
-    // void send_raw_request(request_input *req_input, response_data *response_ref, int debug);
-
-#ifdef __cplusplus
-}
-#endif
+// extern void response_callback_from_c(int loop_size, response_data res_data[], char *uuid);
+void *loop_on_the_thread(void *data);
+void send_request_in_concurrently(request_input *req_inputs, response_data *response_ref, additional_details _additional_details, int debug);
+response_data send_raw_request(request_input *req_input, response_data *response_ref, int debug);
