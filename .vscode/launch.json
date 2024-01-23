@@ -16,7 +16,7 @@
         "DISABLE_COLOR":"false",  
         "CALCULATE_PAYLOAD_SIZE":"true",
         "CGO_ENABLED":"1",
-        "USING_C_CURL":"false",
+        "USING_C_CURL":"true",
       },
       "args": [" -gcflags=all=\"-N -l\"", " -race"]
     },    

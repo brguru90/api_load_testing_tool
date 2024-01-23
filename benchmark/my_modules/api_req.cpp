@@ -463,6 +463,7 @@ static void on_request_complete(CURLMcode resp)
                 total = -1;
             }
 
+
             response_ref->connect_time_microsec = connect;
             response_ref->time_to_first_byte_microsec = start;
             response_ref->total_time_from_curl_microsec = total;
@@ -473,6 +474,14 @@ static void on_request_complete(CURLMcode resp)
 
             response_ref->response_header = response_ref->Resp_header.data;
             response_ref->response_body = response_ref->Resp_body.data;
+
+
+            if(response_ref->status_code==0){
+                printf("-- Failed request --\n");
+                printf("Resp_header=%s\n",response_ref->Resp_header.data);
+                printf("Resp_body=%s\n",response_ref->Resp_body.data);
+                printf("seconds to connect=%lf,ttfb=%lf\n",  connect / 1e6, start / 1e6);
+            }
 
             if (response_ref->debug > 2)
             {
@@ -523,6 +532,7 @@ static void on_timeout(uv_timer_t *req)
 {
     int running_handles;
     CURLMcode res;
+    printf("2curl_handle=%ld\n",(long)curl_handle);
     res = curl_multi_socket_action(curl_handle, CURL_SOCKET_TIMEOUT, 0,
                                    &running_handles);
     on_request_complete(res);
@@ -595,6 +605,10 @@ void loop_on_the_thread(request_input *req_inputs, response_data *response_ref, 
     uv_timer_init(loop, &timeout);
 
     curl_handle = curl_multi_init();
+    printf("1 curl_handle=%ld\n",(long)curl_handle);
+    curl_multi_setopt(curl_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 100); // if the number of connection increased then server may fail to respond, for now fixing it to 100
+    // & as i see for less connection server responds fast
+    curl_multi_setopt(curl_handle, CURLMOPT_MAX_PIPELINE_LENGTH, total_requests);
     curl_multi_setopt(curl_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
     curl_multi_setopt(curl_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
     for (int i = 0; i < total_requests; i++)

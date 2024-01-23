@@ -149,11 +149,9 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	// 	total_requests: C.int(concurrent_request),
 	// 	total_threads:  C.int(nor_of_thread),
 	// }, 0)
-	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]),C.int(concurrent_request), 0)
-
+	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.int(concurrent_request), 0)
 
 	(*all_iteration_data)[main_iteration].concurrent_req_end_time = time.Now()
-	
 
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
@@ -178,14 +176,14 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 				ttfb:            (float64(int64(data.time_to_first_byte_microsec)) / 1000),
 			},
 		}
-		resp, err := parseHttpResponse(C.GoString(data.response_header), C.GoString(data.response_body), nil)
+		resp, err := parseHttpResponse(C.GoString(data.response_header), C.GoString(data.response_body), nil, additional_detail.request_id)
 		if err != nil {
 			resp = nil
 		}
 		messages := MessageType{
 			UID:                  (*request_ahead_array)[sub_iteration].uid,
 			Data:                 api_data,
-			Time_to_complete_api: float64(int64(data.total_time_microsec))/1000,
+			Time_to_complete_api: float64(int64(data.total_time_microsec)) / 1000,
 			Err:                  fmt.Errorf("Curl error code %d", strconv.Itoa(int(data.err_code))),
 			Res:                  resp,
 		}
@@ -247,7 +245,7 @@ func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 				}
 			}()
 
-			data, time_to_complete_api, resp, additional_details, err := APIReq(&(*request_ahead_array)[sub_iteration])
+			data, time_to_complete_api, resp, additional_details, err := APIReq(&(*request_ahead_array)[sub_iteration], concurrent_request)
 			// fmt.Printf("finish APIReq\n")
 			(*all_iteration_data)[main_iteration].additional_details <- additional_details
 			(*all_iteration_data)[main_iteration].messages <- MessageType{

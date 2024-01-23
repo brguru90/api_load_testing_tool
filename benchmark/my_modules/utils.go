@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptrace"
@@ -41,7 +42,7 @@ type CreatedAPIRequestFormat struct {
 	payload      map[string]interface{}
 	url          string
 	uid          int64
-	raw_req string
+	raw_req      string
 }
 
 func RandomBytes(size int) (blk []byte, err error) {
@@ -132,7 +133,7 @@ func CreateAPIRequest(
 		payload:      payload_obj,
 		url:          _url,
 		uid:          uid,
-		raw_req: string(reqDump),
+		raw_req:      string(reqDump),
 	}
 
 }
@@ -141,6 +142,7 @@ func CreateAPIRequest(
 // get the metrics like delay, payload size etc for particular request
 func APIReq(
 	api_request *CreatedAPIRequestFormat,
+	concurrent_request int64,
 ) (APIData, float64, *http.Response, AdditionalAPIDetails, error) {
 	uid := &api_request.uid
 	additional_detail := AdditionalAPIDetails{
@@ -181,8 +183,14 @@ func APIReq(
 	additional_detail.request_payload_size = api_request.request_size
 	req := api_request.req.WithContext(httptrace.WithClientTrace(api_request.req.Context(), trace))
 
+	// t := http.DefaultTransport.(*http.Transport).Clone()
+	// t.MaxIdleConns = int(concurrent_request)*2
+	// t.MaxConnsPerHost = int(concurrent_request)
+	// t.MaxIdleConnsPerHost = int(concurrent_request)
+
 	client := &http.Client{
 		Timeout: HTTPTimeout,
+		// Transport: t,
 	}
 
 	resp, err := client.Do(req)
@@ -242,7 +250,7 @@ func APIReq(
 				status_code: -1,
 				payload:     api_request.payload,
 			},
-		}, float64(end_time.Sub(start_time).Microseconds())/1000, nil, additional_detail, err
+		}, float64(end_time.Sub(start_time).Microseconds()) / 1000, nil, additional_detail, err
 	}
 
 	// if response_interceptor != nil {
@@ -271,16 +279,24 @@ func APIReq(
 			payload:     api_request.payload,
 			// json_body:       json_body,
 			// body:            body,
-			time:            float64(end_time.Sub(start_time).Microseconds())/1000,
-			time_to_connect: float64(connected_time.Sub(start_time).Microseconds())/1000,
-			ttfb:            float64(ttfb.Sub(start_time).Microseconds())/1000,
+			time:            float64(end_time.Sub(start_time).Microseconds()) / 1000,
+			time_to_connect: float64(connected_time.Sub(start_time).Microseconds()) / 1000,
+			ttfb:            float64(ttfb.Sub(start_time).Microseconds()) / 1000,
 		},
-	}, float64(end_time.Sub(start_time).Microseconds())/1000, resp, additional_detail, nil
+	}, float64(end_time.Sub(start_time).Microseconds()) / 1000, resp, additional_detail, nil
 
 }
 
-
-func parseHttpResponse(header string, _body string, req *http.Request) (*http.Response, error) {
+func parseHttpResponse(header string, _body string, req *http.Request, uid int64) (r_resp *http.Response, r_err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("uid", uid)
+			fmt.Println("header", header)
+			fmt.Println("_body", _body)
+			fmt.Println("Recovered in f:", r)
+			r_err = fmt.Errorf("no response")
+		}
+	}()
 	skip_string := "Transfer-Encoding: chunked\r\n"
 	pos := strings.Index(header, skip_string)
 	if pos >= 0 {
@@ -292,7 +308,7 @@ func parseHttpResponse(header string, _body string, req *http.Request) (*http.Re
 	prefix := make([]byte, 7)
 	n, err := io.ReadFull(body, prefix)
 	if err != nil {
-		panic("handler err")
+		panic("Error in reading response body")
 	}
 	// fmt.Println(n, err, string(prefix))
 	if string(prefix[:n]) == "HTTP/2 " {
