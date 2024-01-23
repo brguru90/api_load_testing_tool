@@ -9,7 +9,7 @@ import (
 
 func TestTool() {
 	var total_req int64 = 1000000
-	var concurrent_req int64 = 100000
+	var concurrent_req int64 = 500000
 
 	// _url := "http://localhost:8000/api/test"
 	_url := "http://localhost"

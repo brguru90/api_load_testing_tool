@@ -1,5 +1,6 @@
 # api_load_testing_tool - written in Golang
 
+
 ```
 the repo consist of some example & demonstrated how to use the benchmark tool/function
 it sends concurrent request repeatedly for multiple time, each batch may have 1000 concurrent request,
@@ -8,6 +9,10 @@ here demonstrated benchmark on
 2. login (login with stored credential from above, then intercept response to collect cookie & csrf tokens)
 3. get user info (intercept request to attach same cookie & csrf tokens)
 4. get the multiple user info with pagination (here all user can see all user - like all user is admin, data just for demonstration)
+
+tested using dependencies
+libuv 16.8
+curl 7.68.0
 ```
 
 ## tool to run benchmark on API
