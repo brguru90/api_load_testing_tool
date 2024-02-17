@@ -6,7 +6,6 @@ class api_req_async
 {
 private:
     void *data;
-    int req_sent,req_timeout,req_finish;
     uv_loop_t *loop = nullptr;
     CURLM *curl_handle = nullptr;
     uv_timer_t timeout;

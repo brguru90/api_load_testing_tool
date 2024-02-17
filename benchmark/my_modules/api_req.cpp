@@ -286,7 +286,7 @@ static void curl_perform(uv_poll_t *req, int status, int events)
     res = curl_multi_socket_action(curl_handle, context->sockfd, flags,
                                    &running_handles);
 
-    printf("done curl_handle=%ld\n",(long)curl_handle);
+    // printf("done curl_handle=%ld\n",(long)curl_handle);
     on_request_complete(curl_handle,res);
 }
 
@@ -295,7 +295,7 @@ static void on_timeout(uv_timer_t *req)
     CURLM *curl_handle = (CURLM *)req->loop->data;
     int running_handles;
     CURLMcode res;
-    printf("timeout curl_handle=%ld\n",(long)curl_handle);
+    // printf("timeout curl_handle=%ld\n",(long)curl_handle);
     res = curl_multi_socket_action(curl_handle, CURL_SOCKET_TIMEOUT, 0,
                                    &running_handles);
     on_request_complete(curl_handle,res);
@@ -441,8 +441,8 @@ void api_req_async::loop_on_the_thread(request_input *req_inputs, response_data 
     uv_timer_init(loop, &timeout);
 
     curl_handle = curl_multi_init();
-    loop->data = curl_handle;
     printf("init curl_handle=%ld\n",(long)curl_handle);
+    loop->data = curl_handle;
     this->data = data;
     curl_multi_setopt(curl_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 100); // if the number of connection increased then server may fail to respond, for now fixing it to 100
     // & as i see for less connection server responds fast
