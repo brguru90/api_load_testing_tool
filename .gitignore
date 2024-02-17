@@ -9,3 +9,4 @@ debug.bin
 cpu.pprof
 api_req.so
 a.out
+api_load_testing_tool
