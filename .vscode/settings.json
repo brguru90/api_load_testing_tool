@@ -21,5 +21,8 @@
         "*.tcc": "c",
         "cstdint": "c",
         "typeinfo": "c"
-    }
+    },
+    "go.toolsEnvVars": {
+        "GOPACKAGESDRIVER_BAZEL_BUILD_FLAGS": "--strategy=GoStdlibList=local",
+    },
 }

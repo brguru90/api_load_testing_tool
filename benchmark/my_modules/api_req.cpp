@@ -71,253 +71,13 @@ static size_t response_writer(void *data, size_t size, size_t nmemb, void *userp
     return realsize;
 }
 
-// void send_raw_request(request_input *req_input, response_data *response_ref, int debug)
-// {
-//     response_data res_data;
-//     res_data.status_code = -2;
+// uv_loop_t *loop;
+// CURLM *curl_handle;
+// uv_timer_t timeout;
 
-//     switch (debug)
-//     {
-//     case 2:
-//         printf("header count=%d\n\n", req_input->headers_len);
-//         printf("%s\n\n", req_input->headers[0].header);
-//         printf("body=%s\n\n", req_input->body);
-//     case 1:
-//         printf("debug_level%d\n", debug);
-//         printf("%s\n", req_input->url);
-//         break;
+// curl_handlers_t *curl_handlers;
 
-//     default:
-//         break;
-//     }
-
-//     CURL *curl;
-//     CURLcode res;
-//     curl_global_init(CURL_GLOBAL_ALL);
-//     curl = curl_easy_init();
-//     struct curl_slist *header_list = NULL;
-//     if (req_input->headers_len > 0)
-//     {
-//         for (int i = 0; i < req_input->headers_len; i++)
-//         {
-//             curl_slist_append(header_list, req_input->headers[i].header);
-//         }
-//     }
-//     // struct curl_slist *header_list = curl_slist_append(NULL, "Content-Type: text/html");
-//     if (curl)
-//     {
-//         long response_code;
-//         curl_off_t start = -1, connect = -1, total = -1;
-//         struct memory body = {0}, header = {0};
-//         // to request
-//         curl_easy_setopt(curl, CURLOPT_VERBOSE, debug > 2 ? 1L : 0);
-//         curl_easy_setopt(curl, CURLOPT_URL, req_input->url);
-//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYSTATUS, 0);
-//         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-//         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
-//         curl_easy_setopt(curl, CURLOPT_USERAGENT, "cgo benchmark tool");
-//         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
-//         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, req_input->method);
-
-//         // from response
-//         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_writer);
-//         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&body);
-//         curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header);
-//         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, response_writer);
-
-//         // need to map all inputs like
-//         // Header
-//         // query param
-//         // method
-//         // body
-//         // blob files
-//         // keep alive
-//         // time out
-//         // chunked, see?
-//         // UA
-
-//         res_data.before_connect_time_microsec = get_current_time();
-//         res = curl_easy_perform(curl);
-//         /* Check for errors */
-//         if (res != CURLE_OK)
-//         {
-//             if (debug > 1)
-//             {
-//                 fprintf(stderr, "curl_easy_perform() failed: %s\n",
-//                         curl_easy_strerror(res));
-//             }
-//             response_code = -1;
-//         }
-//         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-//         res = curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME_T, &connect);
-//         if (CURLE_OK != res)
-//         {
-//             connect = -1;
-//         }
-//         res = curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME_T, &start);
-//         if (CURLE_OK != res)
-//         {
-//             start = -1;
-//         }
-//         res = curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME_T, &total);
-//         if (CURLE_OK != res)
-//         {
-//             total = -1;
-//         }
-//         if (debug > 1)
-//         {
-//             printf("status_code=%ld\n", response_code);
-//             printf("before_connect_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf\n",res_data.before_connect_time_microsec, connect / 1e6, start / 1e6, total / 1e6);
-//         }
-//         if (debug > 2)
-//         {
-//             printf("%s\n%s\n", header.data, body.data);
-//         }
-
-//         res_data.status_code = response_code;
-//         res_data.connect_time_microsec = connect;
-//         res_data.time_at_first_byte_microsec = start;
-//         res_data.total_time_microsec = total;
-//         res_data.connected_at_microsec=res_data.before_connect_time_microsec+connect;
-//         res_data.first_byte_at_microsec=res_data.before_connect_time_microsec+start;
-//         res_data.finish_at_microsec=res_data.before_connect_time_microsec+total;
-
-//         res_data.response_header = header.data;
-//         res_data.response_body = body.data;
-
-//         curl_easy_cleanup(curl);
-//     }
-//     curl_global_cleanup();
-//     *response_ref = res_data;
-// }
-// void send_raw_request(request_input *req_input, response_data *response_ref, int debug)
-// {
-//     response_data res_data;
-//     res_data.status_code = -2;
-
-//     switch (debug)
-//     {
-//     case 2:
-//         printf("header count=%d\n\n", req_input->headers_len);
-//         printf("%s\n\n", req_input->headers[0].header);
-//         printf("body=%s\n\n", req_input->body);
-//     case 1:
-//         printf("debug_level%d\n", debug);
-//         printf("%s\n", req_input->url);
-//         break;
-
-//     default:
-//         break;
-//     }
-
-//     CURL *curl;
-//     CURLcode res;
-//     curl_global_init(CURL_GLOBAL_ALL);
-//     curl = curl_easy_init();
-//     struct curl_slist *header_list = NULL;
-//     if (req_input->headers_len > 0)
-//     {
-//         for (int i = 0; i < req_input->headers_len; i++)
-//         {
-//             curl_slist_append(header_list, req_input->headers[i].header);
-//         }
-//     }
-//     // struct curl_slist *header_list = curl_slist_append(NULL, "Content-Type: text/html");
-//     if (curl)
-//     {
-//         long response_code;
-//         curl_off_t start = -1, connect = -1, total = -1;
-//         struct memory body = {0}, header = {0};
-//         // to request
-//         curl_easy_setopt(curl, CURLOPT_VERBOSE, debug > 2 ? 1L : 0);
-//         curl_easy_setopt(curl, CURLOPT_URL, req_input->url);
-//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYSTATUS, 0);
-//         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-//         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
-//         curl_easy_setopt(curl, CURLOPT_USERAGENT, "cgo benchmark tool");
-//         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_input->body);
-//         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, req_input->method);
-
-//         // from response
-//         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_writer);
-//         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&body);
-//         curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header);
-//         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, response_writer);
-
-//         // need to map all inputs like
-//         // Header
-//         // query param
-//         // method
-//         // body
-//         // blob files
-//         // keep alive
-//         // time out
-//         // chunked, see?
-//         // UA
-
-//         res_data.before_connect_time_microsec = get_current_time();
-//         res = curl_easy_perform(curl);
-//         /* Check for errors */
-//         if (res != CURLE_OK)
-//         {
-//             if (debug > 1)
-//             {
-//                 fprintf(stderr, "curl_easy_perform() failed: %s\n",
-//                         curl_easy_strerror(res));
-//             }
-//             response_code = -1;
-//         }
-//         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-//         res = curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME_T, &connect);
-//         if (CURLE_OK != res)
-//         {
-//             connect = -1;
-//         }
-//         res = curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME_T, &start);
-//         if (CURLE_OK != res)
-//         {
-//             start = -1;
-//         }
-//         res = curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME_T, &total);
-//         if (CURLE_OK != res)
-//         {
-//             total = -1;
-//         }
-//         if (debug > 1)
-//         {
-//             printf("status_code=%ld\n", response_code);
-//             printf("before_connect_time_microsec=%lld,seconds to connect=%lf,ttfb=%lf,total=%lf\n", res_data.before_connect_time_microsec, connect / 1e6, start / 1e6, total / 1e6);
-//         }
-//         if (debug > 2)
-//         {
-//             printf("%s\n%s\n", header.data, body.data);
-//         }
-
-//         res_data.status_code = response_code;
-//         res_data.connect_time_microsec = connect;
-//         res_data.time_to_first_byte_microsec = start;
-//         res_data.total_time_from_curl_microsec = total;
-//         res_data.total_time_microsec = (res_data.after_response_time_microsec - res_data.before_connect_time_microsec);
-//         res_data.connected_at_microsec = res_data.before_connect_time_microsec + connect;
-//         res_data.first_byte_at_microsec = res_data.before_connect_time_microsec + start;
-//         res_data.finish_at_microsec = res_data.before_connect_time_microsec + res_data.total_time_microsec;
-
-//         res_data.response_header = header.data;
-//         res_data.response_body = body.data;
-
-//         curl_easy_cleanup(curl);
-//     }
-//     curl_global_cleanup();
-//     *response_ref = res_data;
-// }
-
-uv_loop_t *loop;
-CURLM *curl_handle;
-uv_timer_t timeout;
-
-curl_handlers_t *curl_handlers;
-
-static curl_context_t *create_curl_context(curl_socket_t sockfd)
+curl_context_t *api_req_async::create_curl_context(curl_socket_t sockfd)
 {
     curl_context_t *context;
 
@@ -342,7 +102,7 @@ static void destroy_curl_context(curl_context_t *context)
     uv_close((uv_handle_t *)&context->poll_handle, curl_close_cb);
 }
 
-static void add_request_to_event_loop(request_input *req_input, response_data *response_ref, int debug)
+void api_req_async::add_request_to_event_loop(request_input *req_input, response_data *response_ref, int debug)
 {
     response_ref->uid = req_input->uid;
     response_ref->status_code = -2;
@@ -408,7 +168,7 @@ static void add_request_to_event_loop(request_input *req_input, response_data *r
     }
 }
 
-static void on_request_complete(CURLMcode resp)
+static void on_request_complete(CURLM *curl_handle,CURLMcode res)
 {
     char *done_url;
     CURLMsg *message;
@@ -510,6 +270,7 @@ static void on_request_complete(CURLMcode resp)
 
 static void curl_perform(uv_poll_t *req, int status, int events)
 {
+    CURLM *curl_handle = (CURLM *)req->loop->data;
     int running_handles;
     int flags = 0;
     curl_context_t *context;
@@ -525,20 +286,22 @@ static void curl_perform(uv_poll_t *req, int status, int events)
     res = curl_multi_socket_action(curl_handle, context->sockfd, flags,
                                    &running_handles);
 
-    on_request_complete(res);
+    printf("done curl_handle=%ld\n",(long)curl_handle);
+    on_request_complete(curl_handle,res);
 }
 
 static void on_timeout(uv_timer_t *req)
 {
+    CURLM *curl_handle = (CURLM *)req->loop->data;
     int running_handles;
     CURLMcode res;
-    printf("2curl_handle=%ld\n",(long)curl_handle);
+    printf("timeout curl_handle=%ld\n",(long)curl_handle);
     res = curl_multi_socket_action(curl_handle, CURL_SOCKET_TIMEOUT, 0,
                                    &running_handles);
-    on_request_complete(res);
+    on_request_complete(curl_handle,res);
 }
 
-static int start_timeout(CURLM *multi, long timeout_ms, void *userp)
+int api_req_async::start_timeout(CURLM *multi, long timeout_ms, void *userp)
 {
     // printf("timeout_ms->%ld\n", timeout_ms);
     if (timeout_ms < 0)
@@ -555,7 +318,7 @@ static int start_timeout(CURLM *multi, long timeout_ms, void *userp)
     return 0;
 }
 
-static int handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
+int api_req_async::handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
                          void *socketp)
 {
     curl_context_t *curl_context;
@@ -592,7 +355,80 @@ static int handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
     return 0;
 }
 
-void loop_on_the_thread(request_input *req_inputs, response_data *response_ref, int total_requests, int debug)
+
+api_req_async::api_req_async()
+{
+}
+
+api_req_async::~api_req_async()
+{
+    // uv_loop_delete(loop);
+    // uv_walk(
+    //     loop,
+    //     [](uv_handle_t *handle, void *arg)
+    //     {
+    //         printf("closing...%p\n", handle);
+    //         uv_close(handle, [](uv_handle_t *handle)
+    //                  { printf("closed...%p\n", handle); });
+    //         uv_run(handle->loop, UV_RUN_ONCE);
+    //     },
+    //     nullptr);
+    free(loop);
+}
+
+
+struct Closure_handle_socket
+{
+    template <typename Any, typename RETURN_TYPE>
+    static Any lambda_ptr_exec(CURL *easy, curl_socket_t s, int action, void *userp, void *socketp)
+    {
+        return (Any)(*(RETURN_TYPE *)callback<RETURN_TYPE>())(easy, s, action, userp, socketp);
+    }
+
+    template <typename Any = void, typename CALLER_TYPE = Any (*)(CURL *, curl_socket_t, int, void *, void *), typename RETURN_TYPE>
+    static CALLER_TYPE create(RETURN_TYPE &t)
+    {
+        callback<RETURN_TYPE>(&t);
+        return (CALLER_TYPE)lambda_ptr_exec<Any, RETURN_TYPE>;
+    }
+
+    template <typename T>
+    static void *callback(void *new_callback = nullptr)
+    {
+        static void *callback;
+        if (new_callback != nullptr)
+            callback = new_callback;
+        return callback;
+    }
+};
+
+struct Closure_start_timeout
+{
+    template <typename Any, typename RETURN_TYPE>
+    static Any lambda_ptr_exec(CURLM *multi, long timeout_ms, void *userp)
+    {
+        return (Any)(*(RETURN_TYPE *)callback<RETURN_TYPE>())(multi, timeout_ms, userp);
+    }
+
+    template <typename Any = void, typename CALLER_TYPE = Any (*)(CURLM *, long, void *), typename RETURN_TYPE>
+    static CALLER_TYPE create(RETURN_TYPE &t)
+    {
+        callback<RETURN_TYPE>(&t);
+        return (CALLER_TYPE)lambda_ptr_exec<Any, RETURN_TYPE>;
+    }
+
+    template <typename T>
+    static void *callback(void *new_callback = nullptr)
+    {
+        static void *callback;
+        if (new_callback != nullptr)
+            callback = new_callback;
+        return callback;
+    }
+};
+
+
+void api_req_async::loop_on_the_thread(request_input *req_inputs, response_data *response_ref, int total_requests, int debug)
 {
     loop = uv_default_loop();
 
@@ -605,12 +441,26 @@ void loop_on_the_thread(request_input *req_inputs, response_data *response_ref, 
     uv_timer_init(loop, &timeout);
 
     curl_handle = curl_multi_init();
-    printf("1 curl_handle=%ld\n",(long)curl_handle);
+    loop->data = curl_handle;
+    printf("init curl_handle=%ld\n",(long)curl_handle);
+    this->data = data;
     curl_multi_setopt(curl_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 100); // if the number of connection increased then server may fail to respond, for now fixing it to 100
     // & as i see for less connection server responds fast
+
+    auto handle_socket_with_context = [=](CURL *easy, curl_socket_t s, int action, void *userp, void *socketp) -> int
+    {
+        return handle_socket(easy, s, action, userp, socketp);
+    };
+    auto _closure_handle_socket = Closure_handle_socket::create<int>(handle_socket_with_context);
+    auto start_timeout_with_context = [=](CURLM *multi, long timeout_ms, void *userp) -> int
+    {
+        return start_timeout(multi, timeout_ms, userp);
+    };
+    auto _closure_start_timeout = Closure_start_timeout::create<int>(start_timeout_with_context);
+
     curl_multi_setopt(curl_handle, CURLMOPT_MAX_PIPELINE_LENGTH, total_requests);
-    curl_multi_setopt(curl_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
-    curl_multi_setopt(curl_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
+    curl_multi_setopt(curl_handle, CURLMOPT_SOCKETFUNCTION, _closure_handle_socket);
+    curl_multi_setopt(curl_handle, CURLMOPT_TIMERFUNCTION, _closure_start_timeout);
     for (int i = 0; i < total_requests; i++)
     {
         add_request_to_event_loop(&(req_inputs[i]), &(response_ref[i]), debug);
