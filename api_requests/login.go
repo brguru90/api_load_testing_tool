@@ -1,17 +1,20 @@
 package api_requests
 
 import (
-	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
-	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 	"fmt"
 	"net/http"
 
+	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
+	"github.com/brguru90/api_load_testing_tool/benchmark/store"
+
 	_ "github.com/lib/pq"
 )
+
 type RequestSideSession struct {
 	Cookies    []*http.Cookie
 	CSRF_token string
-}  
+}
+
 var RequestSession store.CredentialStore[RequestSideSession]
 
 func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
@@ -21,15 +24,15 @@ func LoginAsMultiUser(total_req int64, concurrent_req int64) interface{} {
 		"Content-Type": "application/json",
 	}
 
-	RequestSession=RequestSession.NewCredentialStore(concurrent_req)
+	RequestSession = RequestSession.NewCredentialStore(concurrent_req)
 
-	fmt.Printf("len of cred ==> %v\n", len(*signup_credentials.CredentialStore_GetAllRefs()))
+	fmt.Printf("len of cred ==> %v\n", signup_credentials.Len())
 
 	payload_generator_callback := func(current_iteration int64) map[string]interface{} {
-		if len(*signup_credentials.CredentialStore_GetAllRefs())>int(current_iteration % concurrent_req){
+		if signup_credentials.Len() > int(current_iteration%concurrent_req) {
 			return map[string]interface{}{
 				"email": signup_credentials.CredentialStore_Get(current_iteration % concurrent_req).Email,
-			}			
+			}
 		}
 		return map[string]interface{}{}
 	}

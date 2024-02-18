@@ -11,7 +11,7 @@ func TestTool() {
 	// var total_req int64 = 500000
 	// var concurrent_req int64 = 100000
 
-	var total_req int64 = 200000
+	var total_req int64 = 500000
 	var concurrent_req int64 = 100000
 
 	// _url := "http://localhost:8000/api/test"

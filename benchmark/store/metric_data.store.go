@@ -1,6 +1,7 @@
 package store
 
 import (
+	"sync"
 	"time"
 )
 
@@ -11,21 +12,22 @@ type BenchmarkDataStoreInfo struct {
 
 var benchmark_data_store []interface{} = []interface{}{}
 var benchmark_data_store_info BenchmarkDataStoreInfo = BenchmarkDataStoreInfo{}
+var benchmark_data_store_info_lock sync.Mutex
 var benchmark_data_store_q = make(chan interface{}, 1000000)
 var watching_benchmark_data_store_q = false
-var benchmark_data_store_callback *func([]interface{},interface{}) []interface{}=nil
+var benchmark_data_store_callback *func([]interface{}, interface{}) []interface{} = nil
 
-func BenchmarkDataStore_ManualAppendFromQ(callback *func([]interface{},interface{}) []interface{}) {
-	benchmark_data_store_callback=callback
+func BenchmarkDataStore_ManualAppendFromQ(callback *func([]interface{}, interface{}) []interface{}) {
+	benchmark_data_store_callback = callback
 }
 
 func BenchmarkDataStore_AppendFromQ() {
 	watching_benchmark_data_store_q = true
 	go func() {
 		for lc := range benchmark_data_store_q {
-			if benchmark_data_store_callback!=nil{
-				benchmark_data_store=(*benchmark_data_store_callback)(benchmark_data_store,lc)
-			} else{
+			if benchmark_data_store_callback != nil {
+				benchmark_data_store = (*benchmark_data_store_callback)(benchmark_data_store, lc)
+			} else {
 				benchmark_data_store = append(benchmark_data_store, lc)
 			}
 		}
@@ -33,6 +35,8 @@ func BenchmarkDataStore_AppendFromQ() {
 }
 
 func BenchmarkDataStore_Append(lc interface{}, updated_at int64) {
+	defer benchmark_data_store_info_lock.Unlock()
+	benchmark_data_store_info_lock.Lock()
 	if !watching_benchmark_data_store_q {
 		BenchmarkDataStore_AppendFromQ()
 	}
@@ -72,18 +76,18 @@ func BenchmarkDataStore_WaitForAppend() {
 	}
 }
 
-func BenchmarkDataStore_CloseQ(){
-	if benchmark_data_store_q!=nil{
+func BenchmarkDataStore_CloseQ() {
+	if benchmark_data_store_q != nil {
 		close(benchmark_data_store_q)
 	}
-	benchmark_data_store_q=nil
+	benchmark_data_store_q = nil
 }
 
-func BenchmarkDataStore_Dispose(){
-	if benchmark_data_store_q!=nil{
+func BenchmarkDataStore_Dispose() {
+	if benchmark_data_store_q != nil {
 		close(benchmark_data_store_q)
 	}
-	benchmark_data_store_q=nil
+	benchmark_data_store_q = nil
 	benchmark_data_store = []interface{}{}
 	benchmark_data_store_info = BenchmarkDataStoreInfo{}
 }

@@ -71,11 +71,6 @@ static size_t response_writer(void *data, size_t size, size_t nmemb, void *userp
     return realsize;
 }
 
-// uv_loop_t *loop;
-// CURLM *curl_handle;
-// uv_timer_t timeout;
-
-// curl_handlers_t *curl_handlers;
 
 curl_context_t *api_req_async::create_curl_context(curl_socket_t sockfd)
 {
@@ -107,6 +102,7 @@ void api_req_async::add_request_to_event_loop(request_input *req_input, response
     response_ref->uid = req_input->uid;
     response_ref->status_code = -2;
     response_ref->debug = debug;
+    // printf("header count=%d\n\n", req_input->headers_len);   
     if (debug > 0)
     {
         printf("debug_level%d\n", debug);
@@ -133,7 +129,7 @@ void api_req_async::add_request_to_event_loop(request_input *req_input, response
     {
         for (int i = 0; i < req_input->headers_len; i++)
         {
-            curl_slist_append(header_list, req_input->headers[i].header);
+            header_list=curl_slist_append(header_list, req_input->headers[i].header);
         }
     }
     curl_easy_setopt(curl, CURLOPT_PRIVATE, response_ref);
