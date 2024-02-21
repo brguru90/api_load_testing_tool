@@ -5,4 +5,5 @@ export USING_C_CURL=true
 # CALCULATE_PAYLOAD_SIZE require more memory
 export CALCULATE_PAYLOAD_SIZE=true
 
-go build -v -o ./benchmark.bin && ./benchmark.bin
+# go build -v -o ./benchmark.bin && ./benchmark.bin
+go build -gcflags=all="-N -l" -race -v -o ./benchmark.bin && ./benchmark.bin

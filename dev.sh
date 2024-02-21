@@ -3,4 +3,4 @@ export DISABLE_COLOR=false
 export CALCULATE_PAYLOAD_SIZE=true
 export USING_C_CURL=true
 
-go build -v -o ./benchmark.bin && ./benchmark.bin
+go build -gcflags=all="-N -l" -race -v -o ./benchmark.bin && gdb ./benchmark.bin

@@ -373,7 +373,7 @@ static void add_request_to_event_loop(request_input *req_input, response_data *r
     {
         for (int i = 0; i < req_input->headers_len; i++)
         {
-            curl_slist_append(header_list, req_input->headers[i].header);
+            header_list=curl_slist_append(header_list, req_input->headers[i].header);
         }
     }
     curl_easy_setopt(curl, CURLOPT_PRIVATE, response_ref);
@@ -532,7 +532,7 @@ static void on_timeout(uv_timer_t *req)
 {
     int running_handles;
     CURLMcode res;
-    printf("2curl_handle=%ld\n",(long)curl_handle);
+    // printf("2curl_handle=%ld\n",(long)curl_handle);
     res = curl_multi_socket_action(curl_handle, CURL_SOCKET_TIMEOUT, 0,
                                    &running_handles);
     on_request_complete(res);

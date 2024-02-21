@@ -311,11 +311,7 @@ static size_t response_writer(void *data, size_t size, size_t nmemb, void *userp
 //     *response_ref = res_data;
 // }
 
-uv_loop_t *loop;
-CURLM *curl_handle;
-uv_timer_t timeout;
 
-curl_handlers_t *curl_handlers;
 
 static curl_context_t *create_curl_context(curl_socket_t sockfd)
 {
@@ -367,12 +363,12 @@ static void add_request_to_event_loop(request_input *req_input, response_data *r
 
     CURL *curl;
     curl = curl_easy_init();
-    struct curl_slist *header_list = NULL;
+   struct curl_slist *header_list = NULL;
     if (req_input->headers_len > 0)
     {
         for (int i = 0; i < req_input->headers_len; i++)
         {
-            curl_slist_append(header_list, req_input->headers[i].header);
+            header_list=curl_slist_append(header_list, req_input->headers[i].header);
         }
     }
     curl_easy_setopt(curl, CURLOPT_PRIVATE, response_ref);
@@ -594,6 +590,9 @@ void loop_on_the_thread(request_input *req_inputs, response_data *response_ref, 
     uv_timer_init(loop, &timeout);
 
     curl_handle = curl_multi_init();
+    curl_multi_setopt(curl_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 100); // if the number of connection increased then server may fail to respond, for now fixing it to 100
+    // & as i see for less connection server responds fast
+    curl_multi_setopt(curl_handle, CURLMOPT_MAX_PIPELINE_LENGTH, total_requests);
     curl_multi_setopt(curl_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
     curl_multi_setopt(curl_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
     for (int i = 0; i < total_requests; i++)

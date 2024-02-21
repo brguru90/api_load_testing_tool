@@ -70,6 +70,7 @@ type CGlobalAllIterationData struct {
 }
 
 var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
+var global_all_iteration_data sync.Mutex
 
 func check_error(err error) {
 	if err != nil {
@@ -80,8 +81,11 @@ func check_error(err error) {
 func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_request int64, uuid string) {
 	var i int = 0
 	var j int64 = 0
+	global_all_iteration_data.Lock()
 	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
 	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	global_all_iteration_data.Unlock()
+
 	request_input := make([]C.struct_SingleRequestInput, concurrent_request)
 	for j = 0; j < concurrent_request; j++ {
 		var sub_iteration int64 = (main_iteration * concurrent_request) + j
@@ -90,7 +94,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 		cookies := ""
 		for _, cookie := range req.Cookies() {
 			// fmt.Printf("%s\n\n",cookie.String())
-			cookies += cookie.String() + ";"
+			cookies += cookie.String() + "; "
 		}
 
 		c_headers := C.malloc(C.size_t(len(req.Header)) * C.sizeof_struct_Headers)
@@ -99,12 +103,18 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 		i = 0
 		for name, values := range req.Header {
 			for _, value := range values {
+				// if name == "cookie" {
+				// 	cookies += value + ";"
+				// 	continue
+				// }
 				headers_data[i] = C.struct_Headers{
 					header: C.CString(name + ": " + value),
 				}
 				i++
 			}
 		}
+
+		// fmt.Printf("cookies=%v\n\n", cookies)
 
 		var body []byte = nil
 		if req.Body != http.NoBody {
@@ -124,17 +134,18 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 				headers:         (*C.struct_Headers)(c_headers),
 				headers_len:     C.int(len(req.Header)),
 				cookies:         C.CString(cookies),
-				body:            C.CString(string(body)),
 				time_out_in_sec: 5 * 60,
+				body:            C.CString(string(body)),
 			}
 		} else {
 			request_input[j] = C.struct_SingleRequestInput{
-				uid:         C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
-				url:         C.CString(req.URL.String()),
-				method:      C.CString(req.Method),
-				headers:     (*C.struct_Headers)(c_headers),
-				headers_len: C.int(len(req.Header)),
-				cookies:     C.CString(cookies),
+				uid:             C.CString(strconv.FormatInt(((*request_ahead_array)[sub_iteration].uid), 10)),
+				url:             C.CString(req.URL.String()),
+				method:          C.CString(req.Method),
+				headers:         (*C.struct_Headers)(c_headers),
+				headers_len:     C.int(len(req.Header)),
+				cookies:         C.CString(cookies),
+				time_out_in_sec: 5 * 60,
 			}
 		}
 	}
@@ -223,12 +234,16 @@ func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 
 	if os.Getenv("USING_C_CURL") == "true" {
 		println("Warning:  using libcurl & libuv")
+		// runtime.LockOSThread()
 		send_concurrent_request_using_c_curl(i, concurrent_request, uuid)
+		// runtime.UnlockOSThread()
 		return
 	}
 
+	global_all_iteration_data.Lock()
 	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
 	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	global_all_iteration_data.Unlock()
 
 	var concurrent_req_wg sync.WaitGroup
 	var j int64
@@ -286,8 +301,9 @@ func BenchmarkAPIAsMultiUser(
 	// connection should be established from runner client in private network to single publicly hosted server
 	process_uuid := uuid.New().String()
 
-	var each_iterations_data []BenchmarkData
+	// var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
+	each_iterations_data := make([]BenchmarkData, number_of_iteration)
 
 	if total_number_of_request < concurrent_request {
 		panic("total_number_of_request<concurrent_request")
@@ -353,12 +369,18 @@ func BenchmarkAPIAsMultiUser(
 		// 	additional_details: make(chan AdditionalAPIDetails, concurrent_request),
 		// })
 	}
+
+	global_all_iteration_data.Lock()
 	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{
 		all_iteration_data:  &all_iteration_data,
 		request_ahead_array: &request_ahead_array,
 	}
+	global_all_iteration_data.Unlock()
 
+	var send_req_wg sync.WaitGroup
 	go func() {
+		defer send_req_wg.Done()
+		send_req_wg.Add(1)
 		iterations_start_time = time.Now()
 		for i = 0; i < number_of_iteration; i++ {
 			messages := &(all_iteration_data[i].messages)
@@ -551,7 +573,8 @@ func BenchmarkAPIAsMultiUser(
 				ProcessUid:    process_uuid,
 			}
 			pushBenchMarkMetrics(result)
-			each_iterations_data = append(each_iterations_data, temp_data)
+			// each_iterations_data = append(each_iterations_data, temp_data)
+			each_iterations_data[_i] = temp_data
 		}(&all_iteration_data[i], int64(i))
 	}
 
@@ -589,6 +612,8 @@ func BenchmarkAPIAsMultiUser(
 		status_codes_in_perc[status_code] = (float64(occurrence) / float64(total_number_of_request)) * 100.0
 	}
 
+	send_req_wg.Wait()
+
 	temp_data := BenchmarkData{
 		Url:                                              _url,
 		Status_codes:                                     status_codes,
@@ -613,7 +638,11 @@ func BenchmarkAPIAsMultiUser(
 	}
 	pushBenchMarkMetrics(result)
 	// runtime.GC()
+
+	global_all_iteration_data.Lock()
 	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{}
+	global_all_iteration_data.Unlock()
+
 	return &each_iterations_data, &temp_data
 }
 
