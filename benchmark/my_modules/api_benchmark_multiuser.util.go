@@ -234,7 +234,9 @@ func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
 
 	if os.Getenv("USING_C_CURL") == "true" {
 		println("Warning:  using libcurl & libuv")
+		// runtime.LockOSThread()
 		send_concurrent_request_using_c_curl(i, concurrent_request, uuid)
+		// runtime.UnlockOSThread()
 		return
 	}
 
