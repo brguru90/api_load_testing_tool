@@ -1,10 +1,11 @@
 package views
 
 import (
-	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
-	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 	"encoding/json"
 	"fmt"
+
+	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
+	"github.com/brguru90/api_load_testing_tool/benchmark/store"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
@@ -27,21 +28,20 @@ func Metrics(c *gin.Context) {
 	M.HandleConnect(func(s *melody.Session) {
 		fmt.Println("on Connect")
 		go func() {
-			temp_data, info := store.BenchmarkDataStore_GetAllWithInfo()
-			_temp_data, _info := *temp_data, *info
+			_temp_data, _info := store.BenchmarkDataStore_GetAllWithInfo()
 
 			result, err := json.MarshalIndent(_temp_data, "", "  ")
 			if err == nil {
 				M.Broadcast([]byte(result))
-				if my_modules.BenchMarkEnded{
+				if my_modules.BenchMarkEnded.Load() {
 					store.BenchmarkDataStore_CloseQ()
 					M.Close()
 					return
 				}
 			}
 			t2 := func(data interface{}) {
-				if data==nil{
-					store.BenchmarkDataStore_CloseQ()
+				if !my_modules.BenchMarkEnded.Load() && data == nil {
+					// store.BenchmarkDataStore_CloseQ()
 					M.Close()
 					return
 				}

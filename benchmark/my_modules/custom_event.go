@@ -1,6 +1,8 @@
 package my_modules
 
-import "sync"
+import (
+	"sync"
+)
 
 type CustomEvent struct {
 	event_id      string
@@ -28,12 +30,12 @@ func (e *CustomEvent) Emit(data interface{}) {
 		e.subscribers = append(e.subscribers, <-e.subscribers_q)
 	}
 	var wg sync.WaitGroup
-	for _, subscriber := range e.subscribers {
+	for _, _subscriber := range e.subscribers {
 		wg.Add(1)
-		go func() {
+		go func(subscriber func(data interface{})) {
 			defer wg.Done()
-			(*subscriber)(data)
-		}()
+			(subscriber)(data)
+		}(*_subscriber)
 	}
 	wg.Wait()
 }

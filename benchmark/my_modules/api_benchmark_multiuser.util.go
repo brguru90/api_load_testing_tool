@@ -22,6 +22,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"sync/atomic"
 	"unsafe"
 
 	"sync"
@@ -62,7 +63,11 @@ func pushBenchMarkMetrics(data interface{}) {
 	store.BenchmarkDataStore_Append(data, t)
 }
 
-var BenchMarkEnded bool = false
+var BenchMarkEnded atomic.Bool
+
+func init() {
+	BenchMarkEnded.Store(false)
+}
 
 type CGlobalAllIterationData struct {
 	all_iteration_data  *[]AllIterationData
@@ -649,7 +654,8 @@ func BenchmarkAPIAsMultiUser(
 func OnBenchmarkEnd() {
 	BenchmarkMetricEvent.Emit(nil)
 	BenchmarkMetricEvent.Dispose()
-	BenchMarkEnded = true
+	BenchMarkEnded.Store(true)
+	fmt.Println("*** Benchmark completed ***")
 }
 
 func InitBeforeBenchMarkStart() {

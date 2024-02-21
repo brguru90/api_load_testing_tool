@@ -30,14 +30,14 @@ func BenchmarkDataStore_ManualAppendFromQ(callback *func([]interface{}, interfac
 func BenchmarkDataStore_AppendFromQ() {
 	watching_benchmark_data_store_q.Store(true)
 	go func() {
-		defer benchmark_data_store_lock.Unlock()
-		benchmark_data_store_lock.Lock()
 		for lc := range benchmark_data_store_q {
+			benchmark_data_store_lock.Lock()
 			if benchmark_data_store_callback != nil {
 				benchmark_data_store = (*benchmark_data_store_callback)(benchmark_data_store, lc)
 			} else {
 				benchmark_data_store = append(benchmark_data_store, lc)
 			}
+			benchmark_data_store_lock.Unlock()
 		}
 	}()
 }
@@ -71,14 +71,14 @@ func BenchmarkDataStore_GetAll() *[]interface{} {
 	return &benchmark_data_store
 }
 
-func BenchmarkDataStore_GetAllWithInfo() (*[]interface{}, *BenchmarkDataStoreInfo) {
+func BenchmarkDataStore_GetAllWithInfo() ([]interface{}, BenchmarkDataStoreInfo) {
 	defer (func() {
 		benchmark_data_store_lock.Unlock()
 		benchmark_data_store_info_lock.Unlock()
 	})()
 	benchmark_data_store_lock.Lock()
 	benchmark_data_store_info_lock.Lock()
-	return &benchmark_data_store, &benchmark_data_store_info
+	return benchmark_data_store, benchmark_data_store_info
 }
 
 func BenchmarkDataStore_WaitForAppend() {

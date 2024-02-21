@@ -605,7 +605,7 @@ void loop_on_the_thread(request_input *req_inputs, response_data *response_ref, 
     uv_timer_init(loop, &timeout);
 
     curl_handle = curl_multi_init();
-    printf("1 curl_handle=%ld\n",(long)curl_handle);
+    if(debug>0) printf("curl_handle=%ld\n",(long)curl_handle);
     curl_multi_setopt(curl_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 100); // if the number of connection increased then server may fail to respond, for now fixing it to 100
     // & as i see for less connection server responds fast
     curl_multi_setopt(curl_handle, CURLMOPT_MAX_PIPELINE_LENGTH, total_requests);
