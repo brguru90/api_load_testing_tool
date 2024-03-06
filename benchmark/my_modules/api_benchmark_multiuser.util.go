@@ -502,10 +502,18 @@ func BenchmarkAPIAsMultiUser(
 			}
 			track_iteration_time := track_iteration_start_time
 			prev_iteration_time := track_iteration_start_time.Add(time.Nanosecond * -1)
-			if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
+			page_size := 8
+			k_nano := (track_iteration_end_time.Sub(track_iteration_start_time) / time.Duration(page_size)).Nanoseconds()
+			time_frame_size := time.Duration(math.Round(float64(k_nano/100)) * 100) // rounding up to nearest decimal
+			if time_frame_size < (100 * time.Nanosecond) {
+				time_frame_size = 100 * time.Nanosecond
+			}
+			// time_frame_size := time.Millisecond * 200 // decrease to increase the detail of iteration data
+			if track_iteration_time.Add(time_frame_size).After(track_iteration_end_time) {
 				track_iteration_time = track_iteration_end_time
 			} else {
-				track_iteration_time = track_iteration_time.Add(time.Second * 1)
+				// add 1 sec gap, if diff between track_iteration_time & track_iteration_end_time is greater than 1 sec
+				track_iteration_time = track_iteration_time.Add(time_frame_size)
 			}
 			var per_second_metrics []BenchMarkPerSecondCount
 			// var _request_sent_in_sec_avg, _request_connected_in_sec_avg, _request_processed_in_sec_avg int64
@@ -515,6 +523,8 @@ func BenchmarkAPIAsMultiUser(
 					var _request_sent_in_sec, _request_connected_in_sec, _request_received_first_byte_in_sec, _request_processed_in_sec int64
 					var request_payload_size float64 = 0
 					var response_payload_size float64 = 0
+
+					// filtering each request in the constructed time boundary
 					for _, additional_detail := range additional_details_arr {
 
 						if additional_detail.request_sent.After(prev_iteration_time) && (additional_detail.request_sent.Equal(track_iteration_time) || additional_detail.request_sent.Before(track_iteration_time)) {
@@ -548,10 +558,10 @@ func BenchmarkAPIAsMultiUser(
 						break
 					}
 					prev_iteration_time = track_iteration_time
-					if track_iteration_time.Add(time.Second * 1).After(track_iteration_end_time) {
+					if track_iteration_time.Add(time_frame_size).After(track_iteration_end_time) {
 						track_iteration_time = track_iteration_end_time
 					} else {
-						track_iteration_time = track_iteration_time.Add(time.Second * 1)
+						track_iteration_time = track_iteration_time.Add(time_frame_size)
 					}
 				}
 			}
