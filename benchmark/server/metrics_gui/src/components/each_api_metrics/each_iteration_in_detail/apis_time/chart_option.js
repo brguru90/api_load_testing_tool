@@ -29,7 +29,7 @@ const chart_option = {
             position: 'left',
             title:{
                 display: true,
-                text: 'Time (ms)'
+                text: 'Time (HH:MM:Sec:Ms)'
             },
             beginAtZero: true
         },

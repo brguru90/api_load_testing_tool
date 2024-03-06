@@ -10,3 +10,4 @@ cpu.pprof
 api_req.so
 a.out
 a.bin
+benchmark/server/metrics_gui/node_modules
