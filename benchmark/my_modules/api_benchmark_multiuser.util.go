@@ -508,6 +508,9 @@ func BenchmarkAPIAsMultiUser(
 			if time_frame_size < (100 * time.Nanosecond) {
 				time_frame_size = 100 * time.Nanosecond
 			}
+			if time_frame_size > (1 * time.Second) {
+				time_frame_size = 1 * time.Second
+			}
 			// time_frame_size := time.Millisecond * 200 // decrease to increase the detail of iteration data
 			if track_iteration_time.Add(time_frame_size).After(track_iteration_end_time) {
 				track_iteration_time = track_iteration_end_time
