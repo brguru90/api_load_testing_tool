@@ -74,8 +74,8 @@ type CGlobalAllIterationData struct {
 	request_ahead_array *[]CreatedAPIRequestFormat
 }
 
-var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
-var global_all_iteration_data sync.Mutex
+// var c_global_all_iteration_data map[string]CGlobalAllIterationData = map[string]CGlobalAllIterationData{}
+// var global_all_iteration_data sync.Mutex
 
 func check_error(err error) {
 	if err != nil {
@@ -83,13 +83,13 @@ func check_error(err error) {
 	}
 }
 
-func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_request int64, uuid string) {
+func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_request int64, uuid string, all_iteration_data *[]AllIterationData, request_ahead_array *[]CreatedAPIRequestFormat) {
 	var i int = 0
 	var j int64 = 0
-	global_all_iteration_data.Lock()
-	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
-	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
-	global_all_iteration_data.Unlock()
+	// global_all_iteration_data.Lock()
+	// request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+	// all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	// global_all_iteration_data.Unlock()
 
 	request_input := make([]C.struct_SingleRequestInput, concurrent_request)
 	for j = 0; j < concurrent_request; j++ {
@@ -172,6 +172,7 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	for j = 0; j < concurrent_request; j++ {
 		data := bulk_response_data[j]
 		var sub_iteration int64 = (main_iteration * concurrent_request) + j
+		req := (*request_ahead_array)[sub_iteration].req
 		additional_detail := AdditionalAPIDetails{
 			request_id:                  int64(*data.uid),
 			request_sent:                time.UnixMicro(int64(data.before_connect_time_microsec)),
@@ -206,8 +207,8 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 
 		(*all_iteration_data)[main_iteration].additional_details <- additional_detail
 		(*all_iteration_data)[main_iteration].messages <- messages
-		if (*request_ahead_array)[sub_iteration].req.Body != http.NoBody {
-			(*request_ahead_array)[sub_iteration].req.Body.Close()
+		if req.Body != http.NoBody {
+			req.Body.Close()
 		}
 		(*request_ahead_array)[sub_iteration] = CreatedAPIRequestFormat{
 			req:          nil,
@@ -215,6 +216,15 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 			payload:      nil,
 			request_size: 0,
 		}
+
+		C.free(unsafe.Pointer(request_input[j].body))
+		C.free(unsafe.Pointer(request_input[j].cookies))
+		C.free(unsafe.Pointer(request_input[j].method))
+		C.free(unsafe.Pointer(request_input[j].uid))
+		C.free(unsafe.Pointer(request_input[j].url))
+
+		C.free(unsafe.Pointer(bulk_response_data[j].response_body))
+		C.free(unsafe.Pointer(bulk_response_data[j].response_header))
 	}
 
 }
@@ -235,20 +245,20 @@ func response_callback_from_c(arr_len C.int, response_data []C.struct_ResponseDa
 	fmt.Println(arr_len)
 }
 
-func send_concurrent_request(i int64, concurrent_request int64, uuid string) {
+func send_concurrent_request(i int64, concurrent_request int64, uuid string, all_iteration_data *[]AllIterationData, request_ahead_array *[]CreatedAPIRequestFormat) {
 
 	if os.Getenv("USING_C_CURL") == "true" {
 		println("Warning:  using libcurl & libuv")
 		// runtime.LockOSThread()
-		send_concurrent_request_using_c_curl(i, concurrent_request, uuid)
+		send_concurrent_request_using_c_curl(i, concurrent_request, uuid, all_iteration_data, request_ahead_array)
 		// runtime.UnlockOSThread()
 		return
 	}
 
-	global_all_iteration_data.Lock()
-	request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
-	all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
-	global_all_iteration_data.Unlock()
+	// global_all_iteration_data.Lock()
+	// request_ahead_array := c_global_all_iteration_data[uuid].request_ahead_array
+	// all_iteration_data := c_global_all_iteration_data[uuid].all_iteration_data
+	// global_all_iteration_data.Unlock()
 
 	var concurrent_req_wg sync.WaitGroup
 	var j int64
@@ -375,12 +385,12 @@ func BenchmarkAPIAsMultiUser(
 		// })
 	}
 
-	global_all_iteration_data.Lock()
-	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{
-		all_iteration_data:  &all_iteration_data,
-		request_ahead_array: &request_ahead_array,
-	}
-	global_all_iteration_data.Unlock()
+	// global_all_iteration_data.Lock()
+	// c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{
+	// 	all_iteration_data:  &all_iteration_data,
+	// 	request_ahead_array: &request_ahead_array,
+	// }
+	// global_all_iteration_data.Unlock()
 
 	var send_req_wg sync.WaitGroup
 	go func() {
@@ -391,7 +401,7 @@ func BenchmarkAPIAsMultiUser(
 			messages := &(all_iteration_data[i].messages)
 			// additional_details := &(all_iteration_data[i].additional_details)
 			fmt.Printf("url=%s,i=%v\n", _url, i)
-			send_concurrent_request(i, concurrent_request, process_uuid)
+			send_concurrent_request(i, concurrent_request, process_uuid, &all_iteration_data, &request_ahead_array)
 
 			close(*messages)
 			close(all_iteration_data[i].additional_details)
@@ -657,9 +667,9 @@ func BenchmarkAPIAsMultiUser(
 	pushBenchMarkMetrics(result)
 	// runtime.GC()
 
-	global_all_iteration_data.Lock()
-	c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{}
-	global_all_iteration_data.Unlock()
+	// global_all_iteration_data.Lock()
+	// c_global_all_iteration_data[process_uuid] = CGlobalAllIterationData{}
+	// global_all_iteration_data.Unlock()
 
 	return &each_iterations_data, &temp_data
 }

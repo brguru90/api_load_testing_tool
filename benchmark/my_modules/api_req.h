@@ -26,12 +26,6 @@ typedef struct curl_context_s
     curl_socket_t sockfd;
 } curl_context_t;
 
-typedef struct CurlHandlers
-{
-    uv_loop_t *loop;
-    CURLM *curl_handle;
-    uv_timer_t timeout;
-} curl_handlers_t;
 
 typedef struct Headers
 {

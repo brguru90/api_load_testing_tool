@@ -17,9 +17,9 @@ func TestAsMultiUser() {
 	my_modules.LogToJSON(user.GetUserDetailAsMultiUser("http://localhost:8000/api/user/", 10000, 1000, false), nil)
 	test_wg.Add(1)
 	go func() {
-		my_modules.LogToJSON(api_requests.SignUp(400, 100), "./log2.json")
+		my_modules.LogToJSON(api_requests.SignUp(1000, 100), "./log2.json")
 		test_wg.Done()
 	}()
-	my_modules.LogToJSON(user.GetUserDetailAsMultiUser("http://localhost:8000/api/user/", 100000, 1000, true), nil)
+	my_modules.LogToJSON(user.GetUserDetailAsMultiUser("http://localhost:8000/api/user/", 10000, 1000, true), nil)
 	test_wg.Wait()
 }
