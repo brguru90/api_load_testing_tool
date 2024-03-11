@@ -165,7 +165,11 @@ func send_concurrent_request_using_c_curl(main_iteration int64, concurrent_reque
 	// 	total_requests: C.int(concurrent_request),
 	// 	total_threads:  C.int(nor_of_thread),
 	// }, 0)
+	// fmt.Println("send_request_in_concurrently << call >>")
+	// runtime.LockOSThread()
 	C.send_request_in_concurrently(&(request_input[0]), &(bulk_response_data[0]), C.int(concurrent_request), 0)
+	// runtime.UnlockOSThread()
+	// fmt.Println("send_request_in_concurrently << done >>")
 
 	(*all_iteration_data)[main_iteration].concurrent_req_end_time = time.Now()
 
@@ -351,11 +355,10 @@ func BenchmarkAPIAsMultiUser(
 						api_payload = payload_obj
 					}
 					requests_ahead <- CreateAPIRequest(_url, method, headers, api_payload, sub_iteration, request_interceptor)
-					// fmt.Printf("requests_ahead %d->%d<%d\n",(main_iteration * concurrent_request) + j,len(requests_ahead),number_of_iteration*concurrent_request)
+					// fmt.Printf("requests_ahead %d->%d<%d\n", (main_iteration*concurrent_request)+j, len(requests_ahead), number_of_iteration*concurrent_request)
 				}((main_iteration * concurrent_request) + j)
 			}
 			rh_concurrent_req_wg.Wait()
-
 		}(i)
 		rh_iteration_wg.Wait()
 	}
@@ -665,6 +668,7 @@ func BenchmarkAPIAsMultiUser(
 		ProcessUid:    process_uuid,
 	}
 	pushBenchMarkMetrics(result)
+	store.BenchmarkDataStore_WaitForAppend()
 	// runtime.GC()
 
 	// global_all_iteration_data.Lock()
@@ -692,7 +696,7 @@ func InitBeforeBenchMarkStart() {
 				} else {
 					temp.AllData = cur_data.(BenchmarkMetricStruct).AllData
 				}
-				data[key] = temp
+				data[key] = temp // data race
 				_matched = true
 			}
 		}

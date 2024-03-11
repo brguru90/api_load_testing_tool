@@ -1,16 +1,13 @@
 package store
 
 import (
-	"sync"
 	"sync/atomic"
-	"time"
 )
 
 type CredentialStore[T any] struct {
-	store_data       []T
-	store_data_q     chan T
-	watching_store_q atomic.Bool
-	mutex            sync.Mutex
+	store_data   []T
+	store_data_q chan T
+	queue_open   atomic.Bool
 }
 
 func (CredentialStore[T]) NewCredentialStore(buffer_size int64) CredentialStore[T] {
@@ -18,27 +15,27 @@ func (CredentialStore[T]) NewCredentialStore(buffer_size int64) CredentialStore[
 		store_data:   []T{},
 		store_data_q: make(chan T, buffer_size),
 	}
-	t.watching_store_q.Store(false)
+	t.queue_open.Store(true)
 	return t
 }
 
 func (e *CredentialStore[T]) CredentialStore_AppendFromQ() {
-	e.watching_store_q.Store(true)
-	go func() {
-		for lc := range e.store_data_q {
-			e.mutex.Lock()
-			e.store_data = append(e.store_data, lc)
-			e.mutex.Unlock()
-
+	for lc := range e.store_data_q {
+		e.store_data = append(e.store_data, lc)
+		if len(e.store_data_q) == 0 {
+			break
 		}
-	}()
+	}
 }
 
 func (e *CredentialStore[T]) CredentialStore_Append(lc T) {
-	if !e.watching_store_q.Load() {
-		e.CredentialStore_AppendFromQ()
+	if !e.queue_open.Load() {
+		return
 	}
 	e.store_data_q <- lc
+	if len(e.store_data_q) == cap(e.store_data_q) {
+		e.queue_open.Store(false)
+	}
 }
 
 func (e *CredentialStore[T]) CredentialStore_Reset(lc T) {
@@ -56,51 +53,35 @@ func (e *CredentialStore[T]) CredentialStore_GetAllRefs() *[]T {
 	return &(e.store_data)
 }
 
-func (e *CredentialStore[T]) CredentialStore_GetQRefs() *chan T {
-	return &e.store_data_q
-}
-
 func (e *CredentialStore[T]) Len() int {
-	defer e.mutex.Unlock()
-	e.mutex.Lock()
 	return len(e.store_data)
 }
 
 func (e *CredentialStore[T]) CredentialStore_GetCount() int {
-	defer e.mutex.Unlock()
-	e.mutex.Lock()
-	return len(e.store_data) + len(e.store_data_q)
+	return len(e.store_data)
 }
 
 func (e *CredentialStore[T]) CredentialStore_Pop() []T {
-	for len(e.store_data_q) <= 0 {
-	}
-	e.mutex.Lock()
 	e.store_data = e.store_data[:len(e.store_data)-1]
-	e.mutex.Unlock()
 	return e.store_data
 }
 
 func (e *CredentialStore[T]) CredentialStore_WaitForAppend() {
-	for {
-		if len(e.store_data_q) == 0 {
-			break
-		}
-		time.Sleep(time.Second * 1)
+	if len(e.store_data_q) > 0 {
+		e.CredentialStore_AppendFromQ()
 	}
+	e.CloseQ()
 }
 
 func (e *CredentialStore[T]) CloseQ() {
-	if e.store_data_q == nil {
+	if e.store_data_q != nil {
 		close(e.store_data_q)
 	}
 	e.store_data_q = nil
+	e.queue_open.Store(false)
 }
 
 func (e *CredentialStore[T]) Dispose() {
-	if e.store_data_q == nil {
-		close(e.store_data_q)
-	}
-	e.store_data_q = nil
+	e.CloseQ()
 	e.store_data = []T{}
 }

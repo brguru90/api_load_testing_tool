@@ -1,9 +1,10 @@
 package api_requests
 
 import (
+	"fmt"
+
 	"github.com/brguru90/api_load_testing_tool/benchmark/my_modules"
 	"github.com/brguru90/api_load_testing_tool/benchmark/store"
-	"fmt"
 	// "encoding/json"
 )
 
@@ -22,7 +23,7 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 		"Content-Type": "application/json",
 	}
 
-	payload_generator_callback:=func(uid int64) map[string]interface{} {
+	payload_generator_callback := func(uid int64) map[string]interface{} {
 		signup_payload := map[string]interface{}{
 			"email":       my_modules.RandomString(100) + "@gmail.com",
 			"name":        my_modules.RandomString(20),
@@ -35,7 +36,7 @@ func SignUp(total_req int64, concurrent_req int64) interface{} {
 		return signup_payload
 	}
 
-	signup_credentials=signup_credentials.NewCredentialStore(concurrent_req)
+	signup_credentials = signup_credentials.NewCredentialStore(concurrent_req)
 	iteration_data, all_data := my_modules.BenchmarkAPIAsMultiUser(total_req, concurrent_req, _url, "post", headers, nil, payload_generator_callback, nil, nil)
 
 	fmt.Println("bench mark on api finished")

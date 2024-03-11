@@ -269,7 +269,7 @@ static void on_request_complete(CURLMcode resp)
         }
     }
 
-    free(message);
+    // free(message);
 }
 
 static void curl_perform(uv_poll_t *req, int status, int events)

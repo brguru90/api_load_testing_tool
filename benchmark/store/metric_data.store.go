@@ -30,6 +30,7 @@ func BenchmarkDataStore_ManualAppendFromQ(callback *func([]interface{}, interfac
 func BenchmarkDataStore_AppendFromQ() {
 	watching_benchmark_data_store_q.Store(true)
 	go func() {
+		defer watching_benchmark_data_store_q.Store(false)
 		for lc := range benchmark_data_store_q {
 			benchmark_data_store_lock.Lock()
 			if benchmark_data_store_callback != nil {
@@ -38,6 +39,10 @@ func BenchmarkDataStore_AppendFromQ() {
 				benchmark_data_store = append(benchmark_data_store, lc)
 			}
 			benchmark_data_store_lock.Unlock()
+			// fmt.Println("Number of goroutines:", runtime.NumGoroutine())
+			if len(benchmark_data_store_q) == 0 {
+				break
+			}
 		}
 	}()
 }
@@ -57,6 +62,8 @@ func BenchmarkDataStore_Append(lc interface{}, updated_at int64) {
 }
 
 func BenchmarkDataStore_Reset(lc interface{}) {
+	defer benchmark_data_store_lock.Unlock()
+	benchmark_data_store_lock.Lock()
 	benchmark_data_store = []interface{}{}
 }
 
@@ -65,9 +72,13 @@ func BenchmarkDataStore_GetInfo() BenchmarkDataStoreInfo {
 }
 
 func BenchmarkDataStore_Get(index int64) interface{} {
+	defer benchmark_data_store_lock.Unlock()
+	benchmark_data_store_lock.Lock()
 	return benchmark_data_store[index]
 }
 func BenchmarkDataStore_GetAll() *[]interface{} {
+	defer benchmark_data_store_lock.Unlock()
+	benchmark_data_store_lock.Lock()
 	return &benchmark_data_store
 }
 
@@ -82,6 +93,9 @@ func BenchmarkDataStore_GetAllWithInfo() ([]interface{}, BenchmarkDataStoreInfo)
 }
 
 func BenchmarkDataStore_WaitForAppend() {
+	if !watching_benchmark_data_store_q.Load() && len(benchmark_data_store_q) > 0 {
+		BenchmarkDataStore_AppendFromQ()
+	}
 	for {
 		if len(benchmark_data_store_q) == 0 {
 			break
@@ -98,6 +112,8 @@ func BenchmarkDataStore_CloseQ() {
 }
 
 func BenchmarkDataStore_Dispose() {
+	defer benchmark_data_store_lock.Unlock()
+	benchmark_data_store_lock.Lock()
 	if benchmark_data_store_q != nil {
 		close(benchmark_data_store_q)
 	}
