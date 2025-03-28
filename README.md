@@ -19,5 +19,4 @@ here demonstrated benchmark on
 
 <embed src="/sample_result.pdf" />
 <a href="/sample_result.pdf" > View Screeshots </a>
-![](sample_result.pdf)
 
