@@ -17,5 +17,5 @@ here demonstrated benchmark on
 ### in a script user can call benchmark api multiple type & parallelly, user can collect data from one API & use the extracted data to next API
 ### allows user to intercept request & response, example usage is to intercept response to collect cookie and then intercept next request to attach cookie
 
-<embed src="/brguru90/api_load_testing_tool/raw/main/sample_result.pdf" />
+<a href="/brguru90/api_load_testing_tool/raw/main/sample_result.pdf" > View Screeshots </a>
 
