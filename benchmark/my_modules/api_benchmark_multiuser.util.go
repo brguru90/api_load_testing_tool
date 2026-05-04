@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/http/httputil"
 
 	// "runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/brguru90/api_load_testing_tool/benchmark/store"
@@ -28,10 +28,22 @@ type BenchmarkMetricStruct struct {
 }
 
 type AllIterationData struct {
-	additional_details        chan AdditionalAPIDetails
-	messages                  chan MessageType
+	// Pointer-typed channels feed into the sync.Pool flow: workers Get a
+	// pooled struct, fill it, push the pointer; collectors drain, copy what
+	// they need, Put the pointer back.
+	additional_details        chan *AdditionalAPIDetails
+	messages                  chan *MessageType
 	concurrent_req_start_time time.Time
 	concurrent_req_end_time   time.Time
+}
+
+// apiJob is the unit of work consumed by the persistent worker pool. One
+// job per request-to-execute. iter is the per-iteration channel pair the
+// worker writes into; wg signals iteration-level completion to the dispatcher.
+type apiJob struct {
+	idx  int64
+	iter *AllIterationData
+	wg   *sync.WaitGroup
 }
 
 var BenchmarkMetricEvent = NewCustomEvent("benchmark_event")
@@ -45,7 +57,10 @@ func pushBenchMarkMetrics(data interface{}) {
 	store.BenchmarkDataStore_Append(data, t)
 }
 
-var BenchMarkEnded bool = false
+// Read by the WS handler goroutine while OnBenchmarkEnd writes from the main
+// benchmark goroutine. Plain bool is racy; atomic.Bool gives memory-ordered
+// publication so the WS side never observes a torn value.
+var BenchMarkEnded atomic.Bool
 
 // run the http request concurrently with set of iteration
 // collect the metric & calculate the metric for concurrent request & for all iteration
@@ -71,8 +86,10 @@ func BenchmarkAPIAsMultiUser(
 	// connection should be established from runner client in private network to single publicly hosted server
 	process_uuid := uuid.New().String()
 
-	var each_iterations_data []BenchmarkData
 	number_of_iteration := total_number_of_request / concurrent_request
+	// Pre-allocated: index assignment is race-free across collector goroutines,
+	// whereas append() races on the slice header.
+	each_iterations_data := make([]BenchmarkData, number_of_iteration)
 
 	if total_number_of_request < concurrent_request {
 		panic("total_number_of_request<concurrent_request")
@@ -82,7 +99,7 @@ func BenchmarkAPIAsMultiUser(
 		panic("(total_number_of_request % concurrent_request)!=0")
 	}
 
-	var concurrent_req_wg, rh_concurrent_req_wg sync.WaitGroup
+	var rh_concurrent_req_wg sync.WaitGroup
 	var rh_iteration_wg sync.WaitGroup
 
 	var i, j int64
@@ -126,63 +143,76 @@ func BenchmarkAPIAsMultiUser(
 	}
 	requests_ahead = nil
 
-	// all_iteration_data := []AllIterationData{}
 	all_iteration_data := make([]AllIterationData, number_of_iteration)
 	for i = 0; i < number_of_iteration; i++ {
 		all_iteration_data[i] = AllIterationData{
-			messages:           make(chan MessageType),
-			additional_details: make(chan AdditionalAPIDetails, concurrent_request),
+			// messages buffered = concurrent_request so workers never block
+			// on send while the collector is still catching up.
+			messages:           make(chan *MessageType, concurrent_request),
+			additional_details: make(chan *AdditionalAPIDetails, concurrent_request),
 		}
-		// all_iteration_data = append(all_iteration_data, AllIterationData{
-		// 	messages:           make(chan MessageType),
-		// 	additional_details: make(chan AdditionalAPIDetails, concurrent_request),
-		// })
 	}
+
+	// Persistent worker pool: spawn `concurrent_request` workers ONCE for
+	// the whole BenchmarkAPIAsMultiUser call. Old code spawned a fresh
+	// goroutine per request per iteration (N * iterations spawns total).
+	// Workers terminate when `jobs` is closed by the dispatcher below.
+	jobs := make(chan apiJob, concurrent_request)
+	for w := int64(0); w < concurrent_request; w++ {
+		go func() {
+			for j := range jobs {
+				data, time_to_complete_api, resp, err := APIReq(
+					&request_ahead_array[j.idx],
+					response_interceptor,
+					&j.iter.additional_details,
+				)
+
+				msg := messagePool.Get().(*MessageType)
+				*msg = MessageType{
+					UID:                  request_ahead_array[j.idx].uid,
+					Data:                 data,
+					Time_to_complete_api: time_to_complete_api,
+					Err:                  err,
+					Res:                  resp,
+				}
+				j.iter.messages <- msg
+
+				// Free the *http.Request and payload map referenced from this
+				// slot. With 100k pre-built requests this incremental release
+				// keeps RSS bounded; without it the whole request_ahead_array
+				// stays live until BenchmarkAPIAsMultiUser returns.
+				request_ahead_array[j.idx] = CreatedAPIRequestFormat{}
+
+				j.wg.Done()
+			}
+		}()
+	}
+
 	go func() {
 		iterations_start_time = time.Now()
 		for i = 0; i < number_of_iteration; i++ {
-			messages := &(all_iteration_data[i].messages)
-			additional_details := &(all_iteration_data[i].additional_details)
 			all_iteration_data[i].concurrent_req_start_time = time.Now()
 			fmt.Printf("url=%s,i=%v\n", _url, i)
 
-			concurrent_req_wg.Add(int(concurrent_request))
-			// todo:
-			// here benchmark server will distribute request to runner client
-			// wait for all to complete
-			// & then collect metrics
+			var iterWg sync.WaitGroup
+			iterWg.Add(int(concurrent_request))
 			for j = 0; j < concurrent_request; j++ {
-				// fmt.Printf("%v-%v\n", i, j)
-				go func(sub_iteration int64) {
-					defer func() {
-						request_ahead_array[sub_iteration] = CreatedAPIRequestFormat{
-							req:          nil,
-							err:          nil,
-							payload:      nil,
-							request_size: 0,
-						}
-						concurrent_req_wg.Done()
-					}()
-
-					data, time_to_complete_api, resp, err := APIReq(&request_ahead_array[sub_iteration], nil, additional_details)
-					// fmt.Printf("finish APIReq\n")
-					*messages <- MessageType{
-						UID:                  request_ahead_array[sub_iteration].uid,
-						Data:                 data,
-						Time_to_complete_api: time_to_complete_api,
-						Err:                  err,
-						Res:                  resp,
-					}
-					// fmt.Printf("finish channel\n")
-				}((i * concurrent_request) + j)
+				jobs <- apiJob{
+					idx:  (i * concurrent_request) + j,
+					iter: &all_iteration_data[i],
+					wg:   &iterWg,
+				}
 			}
-			concurrent_req_wg.Wait()
+			iterWg.Wait()
 			all_iteration_data[i].concurrent_req_end_time = time.Now()
 
-			close(*messages)
-			close(*additional_details)
+			close(all_iteration_data[i].messages)
+			close(all_iteration_data[i].additional_details)
 		}
 		iterations_end_time = time.Now()
+		// Terminate workers — drains naturally, no Wait needed because the
+		// per-iteration iterWg already accounted for every job dispatched.
+		close(jobs)
 	}()
 
 	var all_iteration_data_collection_wg sync.WaitGroup
@@ -208,22 +238,9 @@ func BenchmarkAPIAsMultiUser(
 			var avg_response_payload_size float64 = 0
 
 			for message := range *messages {
-
-				if response_interceptor != nil {
-					response_interceptor(message.Res, message.UID)
-				}
-
-				response_size := 0
-				if ShouldDumpRequestAndResponse {
-					respDump, err := httputil.DumpResponse(message.Res, true)
-					if err == nil {
-						response_size = len(respDump)
-						respDump = nil
-					}
-				}
-
-				avg_response_payload_size += float64(response_size)
-
+				// response_interceptor + body draining now happen inside APIReq.
+				// Response size is captured into additional_detail.response_payload_size
+				// and aggregated below when we drain additional_details.
 				avg_time_to_complete_api += message.Time_to_complete_api
 				avg_time_to_connect_api += message.Data.context_data.time_to_connect
 				avg_time_to_receive_first_byte_api += message.Data.context_data.ttfb
@@ -237,6 +254,12 @@ func BenchmarkAPIAsMultiUser(
 				if float64(message.Time_to_complete_api) > max_time_to_complete_api {
 					max_time_to_complete_api = float64(message.Time_to_complete_api)
 				}
+
+				// Zero before returning to pool: clears Res (*http.Response),
+				// Err (interface), and Data (which holds maps). Without this
+				// the next consumer of the pooled struct sees stale pointers.
+				*message = MessageType{}
+				messagePool.Put(message)
 			}
 
 			concurrent_req_start_time := cur_iteration_data.concurrent_req_start_time
@@ -251,10 +274,16 @@ func BenchmarkAPIAsMultiUser(
 				status_code_in_percentage[status_code] = (float64(occurrence) / float64(concurrent_request)) * 100
 			}
 
-			var additional_details_arr []AdditionalAPIDetails
+			additional_details_arr := make([]AdditionalAPIDetails, 0, concurrent_request)
 			for additional_detail := range *additional_details {
-				additional_details_arr = append(additional_details_arr, additional_detail)
+				// Copy the value out, then release the pooled struct. The
+				// per-second metrics loop below iterates this slice, so we
+				// must not retain pointers into the pool.
+				additional_details_arr = append(additional_details_arr, *additional_detail)
 				avg_request_payload_size += float64(additional_detail.request_payload_size)
+				avg_response_payload_size += float64(additional_detail.response_payload_size)
+				*additional_detail = AdditionalAPIDetails{}
+				additionalDetailsPool.Put(additional_detail)
 			}
 			if avg_request_payload_size >= 0 {
 				avg_request_payload_size = avg_request_payload_size / float64(len(additional_details_arr))
@@ -361,7 +390,7 @@ func BenchmarkAPIAsMultiUser(
 				ProcessUid:    process_uuid,
 			}
 			pushBenchMarkMetrics(result)
-			each_iterations_data = append(each_iterations_data, temp_data)
+			each_iterations_data[_i] = temp_data
 		}(&all_iteration_data[i], int64(i))
 	}
 
@@ -429,7 +458,12 @@ func BenchmarkAPIAsMultiUser(
 func OnBenchmarkEnd() {
 	BenchmarkMetricEvent.Emit(nil)
 	BenchmarkMetricEvent.Dispose()
-	BenchMarkEnded = true
+	// Flush before signalling done so the on-disk log is closed by the time
+	// any consumer (e.g. WS dashboard, post-run script) reacts to BenchMarkEnded.
+	if err := FlushBufferedLogs(); err != nil {
+		fmt.Printf("FlushBufferedLogs error: %v\n", err)
+	}
+	BenchMarkEnded.Store(true)
 }
 
 func InitBeforeBenchMarkStart() {

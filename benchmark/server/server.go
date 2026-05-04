@@ -85,5 +85,10 @@ func RunServer(disable_color bool,gin_mode string) {
 			openbrowser("http://localhost"+bind_to_host)
 		}
 	}()
-	all_router.Run(bind_to_host)
+	// gin.Engine.Run swallows the bind error silently; without this check the
+	// process exits without explanation when the port is already in use
+	// (e.g. macOS AirPlay holds :7000 by default).
+	if err := all_router.Run(bind_to_host); err != nil {
+		log.Fatalf("server failed to bind on %s: %v", bind_to_host, err)
+	}
 }

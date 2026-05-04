@@ -33,7 +33,7 @@ func Metrics(c *gin.Context) {
 			result, err := json.MarshalIndent(_temp_data, "", "  ")
 			if err == nil {
 				M.Broadcast([]byte(result))
-				if my_modules.BenchMarkEnded{
+				if my_modules.BenchMarkEnded.Load() {
 					store.BenchmarkDataStore_CloseQ()
 					M.Close()
 					return

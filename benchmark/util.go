@@ -17,7 +17,9 @@ import (
 )
 
 func RunBenchmark(callback func()) {
-	runtime.GOMAXPROCS(runtime.NumCPU()*100)
+	// NumCPU()*100 thrashes the scheduler (context switch storm).
+	// Go runtime uses GOMAXPROCS to size the P pool; goroutines beyond P count are queued, not parallel.
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var gin_mode string = os.Getenv("GIN_MODE")
 	var enable_profiling bool = os.Getenv("PROFILING") == "true"

@@ -2,6 +2,7 @@ package my_modules
 
 import (
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,21 @@ type MessageType struct {
 	Time_to_complete_api int64
 	Err                  error
 	Res                  *http.Response
+}
+
+// Pools for hot-path heap-resident structs. The wrapper structs themselves
+// rarely escape (channels of value types don't heap-alloc per send), but the
+// pointer-channel form lets the worker hand off ownership without copying
+// large structs and lets the collector hand them back to the pool. Net win
+// is small in absolute allocations (real GC churn at high N comes from
+// httptrace closures + http.Request.WithContext clones) but it removes one
+// per-request escape path and makes the data flow explicit.
+var messagePool = sync.Pool{
+	New: func() interface{} { return &MessageType{} },
+}
+
+var additionalDetailsPool = sync.Pool{
+	New: func() interface{} { return &AdditionalAPIDetails{} },
 }
 
 type BenchmarkData struct {

@@ -2,9 +2,12 @@ package my_modules
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/http/httputil"
@@ -15,6 +18,30 @@ import (
 var HTTPTimeout = time.Minute * 5
 
 var ShouldDumpRequestAndResponse bool = false
+
+// Single transport reused across the whole process so connections + TLS sessions
+// are pooled. Per-request http.Client allocation (old behaviour) forced new dial
+// + new TLS handshake on every call -> the dominant overhead at high concurrency.
+var DefaultTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	ForceAttemptHTTP2:     true, // HTTP/2 for HTTPS targets that ALPN-negotiate it
+	MaxIdleConns:          0,    // unlimited
+	MaxIdleConnsPerHost:   100000,
+	MaxConnsPerHost:       0, // unlimited
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	DisableCompression:    true,
+}
+
+// No Timeout on the client itself; per-request context honours a mutable HTTPTimeout.
+var sharedClient = &http.Client{
+	Transport: DefaultTransport,
+}
 
 type ContextData struct {
 	status_code     int
@@ -56,15 +83,26 @@ func RandomString(size int) string {
 	return ""
 }
 
-func JSONMarshal(t interface{},indent bool) ([]byte, error) {
+func JSONMarshal(t interface{}, indent bool) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)
-	if indent{
+	if indent {
 		encoder.SetIndent("", " ")
 	}
 	err := encoder.Encode(t)
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
+}
+
+// cheap header byte estimate, no serialization
+func headerSize(h http.Header) int {
+	n := 0
+	for k, v := range h {
+		for _, val := range v {
+			n += len(k) + len(val) + 4 // ": " + "\r\n"
+		}
+	}
+	return n
 }
 
 func CreateAPIRequest(
@@ -78,7 +116,7 @@ func CreateAPIRequest(
 
 	method = strings.ToUpper(method)
 
-	payload, err := JSONMarshal(payload_obj,false)
+	payload, err := JSONMarshal(payload_obj, false)
 
 	var req *http.Request
 	switch method {
@@ -100,7 +138,6 @@ func CreateAPIRequest(
 		}
 	}
 
-	// req.Header.Add("Content-Type", "application/json")
 	for key, value := range header {
 		req.Header.Add(key, value)
 	}
@@ -109,13 +146,18 @@ func CreateAPIRequest(
 		request_interceptor(req, uid)
 	}
 
-	var request_size int = 0
-
+	var request_size int
 	if ShouldDumpRequestAndResponse {
-		reqDump, err := httputil.DumpRequestOut(req, true)
-		if err == nil {
+		// exact wire size via dump (heavy: full marshal). Opt-in only.
+		reqDump, derr := httputil.DumpRequestOut(req, true)
+		if derr == nil {
 			request_size = len(reqDump)
 		}
+	} else {
+		// cheap estimate: request line + headers + body length
+		request_size = len(req.Method) + 1 + len(req.URL.RequestURI()) + 11 // "<METHOD> <uri> HTTP/1.1\r\n"
+		request_size += headerSize(req.Header)
+		request_size += len(payload)
 	}
 
 	return CreatedAPIRequestFormat{
@@ -126,20 +168,35 @@ func CreateAPIRequest(
 		url:          _url,
 		uid:          uid,
 	}
-
 }
 
-// make http request
-// get the metrics like delay, payload size etc for particular request
+// Run a single HTTP request, capture timing + size metrics, drain + close body
+// so the connection returns to the pool. response_interceptor (if non-nil) runs
+// before the body is drained so the caller can read it if they need to.
+//
+// additional_detail_chan: caller passes a *chan *AdditionalAPIDetails. The
+// pointer is taken from additionalDetailsPool, populated, and sent on the
+// channel. The receiver MUST call additionalDetailsPool.Put(ad) after use, or
+// the pool grows unbounded. If chan is nil, this function puts it back itself.
 func APIReq(
 	api_request *CreatedAPIRequestFormat,
 	response_interceptor func(resp *http.Response, uid int64),
-	additional_detail_chan *chan AdditionalAPIDetails,
+	additional_detail_chan *chan *AdditionalAPIDetails,
 ) (APIData, int64, *http.Response, error) {
 	uid := &api_request.uid
-	additional_detail := AdditionalAPIDetails{
-		request_id: *uid,
-	}
+
+	ad := additionalDetailsPool.Get().(*AdditionalAPIDetails)
+	*ad = AdditionalAPIDetails{request_id: *uid}
+
+	// Single send-or-return path: the deferred handoff guarantees we never
+	// leak the pooled struct, regardless of which return branch fires below.
+	defer func() {
+		if additional_detail_chan != nil {
+			*additional_detail_chan <- ad
+		} else {
+			additionalDetailsPool.Put(ad)
+		}
+	}()
 
 	if api_request.err != nil {
 		return APIData{
@@ -156,82 +213,32 @@ func APIReq(
 	var connected_time time.Time
 	var ttfb time.Time
 
-	// https://pkg.go.dev/net/http/httptrace@go1.18.2
 	trace := &httptrace.ClientTrace{
 		GotConn: func(connInfo httptrace.GotConnInfo) {
 			connected_time = time.Now()
-			additional_detail.request_connected = connected_time
-			// fmt.Printf("Got Conn: %+v,\t%v\n", connInfo,connected_time.Sub(start_time).Milliseconds())
+			ad.request_connected = connected_time
 		},
 		GotFirstResponseByte: func() {
 			ttfb = time.Now()
-			additional_detail.request_receives_first_byte = time.Now()
+			ad.request_receives_first_byte = ttfb
 		},
-		// DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-		// 	fmt.Printf("DNS Info: %+v\n", dnsInfo)
-		// },
-	}
-	additional_detail.request_sent = time.Now()
-	additional_detail.request_payload_size = api_request.request_size
-	req := api_request.req.WithContext(httptrace.WithClientTrace(api_request.req.Context(), trace))
-
-	client := &http.Client{
-		Timeout: HTTPTimeout,
 	}
 
-	resp, err := client.Do(req)
+	ad.request_sent = time.Now()
+	ad.request_payload_size = api_request.request_size
+
+	ctx, cancel := context.WithTimeout(api_request.req.Context(), HTTPTimeout)
+	defer cancel()
+	req := api_request.req.WithContext(httptrace.WithClientTrace(ctx, trace))
+
+	resp, err := sharedClient.Do(req)
 	end_time := time.Now()
-	additional_detail.request_processed = end_time
+	ad.request_processed = end_time
 
 	if err != nil {
 		return APIData{
 			url:     api_request.url,
 			context: "client.Do",
-			context_data: ContextData{
-				status_code: -1,
-				payload:     api_request.payload,
-			},
-		}, 0, nil, err
-	}
-
-	// end of time difference calculation
-
-	// var response_size int = 0
-	// if resp.Body!=nil && resp.ContentLength!=0{
-	// 	var resp_body_copy bytes.Buffer
-	// 	_, io_err := io.Copy(&resp_body_copy, resp.Body)
-	// 	if io_err == nil {
-	// 		response_size = len(resp_body_copy.Bytes())
-	// 		reader := bytes.NewReader(resp_body_copy.Bytes())
-	// 		resp.Body = ioutil.NopCloser(reader)
-	// 	}
-	// }
-	// response_header_string:=""
-	// if req.Header!=nil{
-	// 	for key,value :=range resp.Header{
-	// 		response_header_string+=fmt.Sprintf("%v: %v\n",key,strings.Join(value,","))
-	// 	}
-	// }
-	// response_size+=len([]byte(response_header_string))
-
-	// if ShouldDumpRequestAndResponse {
-	// 	respDump, err := httputil.DumpResponse(resp, true)
-	// 	if err == nil {
-	// 		response_size = len(respDump)
-	// 		respDump = nil
-	// 	}
-	// }
-
-	// additional_detail.response_payload_size = response_size
-
-	if additional_detail_chan != nil {
-		*additional_detail_chan <- additional_detail
-	}
-
-	if err != nil {
-		return APIData{
-			url:     api_request.url,
-			context: "API request send",
 			context_data: ContextData{
 				status_code: -1,
 				payload:     api_request.payload,
@@ -243,19 +250,16 @@ func APIReq(
 		response_interceptor(resp, *uid)
 	}
 
-	defer resp.Body.Close()
-	if api_request.payload != nil {
-		defer req.Body.Close()
+	// MUST drain + close so the connection goes back to the keep-alive pool.
+	// Without this, MaxIdleConnsPerHost saturates and concurrency stalls.
+	var bodyBytes int64
+	if resp.Body != nil {
+		bodyBytes, _ = io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
 	}
-
-	// json_body := make(map[string]interface{})
-	// var body []byte = nil
-	// if strings.Contains(resp.Header.Get("Content-Type"), "json") {
-	// 	json.NewDecoder(resp.Body).Decode(&json_body)
-	// } else {
-	// 	body, _ = ioutil.ReadAll(resp.Body)
-	// 	json_body = nil
-	// }
+	ad.response_payload_size = int(bodyBytes) + headerSize(resp.Header)
+	end_time = time.Now()
+	ad.request_processed = end_time
 
 	return APIData{
 		url:     api_request.url,
@@ -263,14 +267,11 @@ func APIReq(
 		context_data: ContextData{
 			status_code:     resp.StatusCode,
 			payload:         api_request.payload,
-			// json_body:       json_body,
-			// body:            body,
 			time:            end_time.Sub(start_time).Milliseconds(),
 			time_to_connect: connected_time.Sub(start_time).Milliseconds(),
 			ttfb:            ttfb.Sub(start_time).Milliseconds(),
 		},
 	}, end_time.Sub(start_time).Milliseconds(), resp, nil
-
 }
 
 func CheckError(err error) {

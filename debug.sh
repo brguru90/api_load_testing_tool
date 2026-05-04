@@ -5,6 +5,9 @@ export PROFILING=true
 export CALCULATE_PAYLOAD_SIZE=false
 # export GOGC=off
 
+# Default 7000 is held by macOS AirPlay Receiver (ControlCenter). Override here.
+export SERVER_PORT="${SERVER_PORT:-7100}"
+
 PID_LIST=""
 
 function beforeExit() {
